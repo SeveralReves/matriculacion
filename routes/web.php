@@ -30,15 +30,31 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/camps', function () {
+Route::get('/campamentos', function () {
     return Inertia::render('Camps');
-})->middleware(['auth', 'verified'])->name('camps');
+})->middleware(['auth', 'verified','superadmin'])->name('camps');
+
+Route::get('/usuarios', function () {
+    return Inertia::render('Users');
+})->middleware(middleware: ['auth', 'verified','superadmin'])->name('users');
+
+Route::get('/acampantes', function () {
+    return Inertia::render('Campers');
+})->middleware(middleware: ['auth', 'verified'])->name('campers');
+
+Route::get('/comidas', function () {
+    return Inertia::render('Meals');
+})->middleware(middleware: ['auth', 'verified'])->name('meals');
+
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+
 Route::middleware(['auth'])->prefix('api')->group(function () {
 
     // 🔐 Solo superadmin puede crear campamentos y usuarios
@@ -64,6 +80,16 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     // 🍽️ Meal Records
     Route::get('/meal-records', [MealRecordController::class, 'index']); // ?camp_id=...&day_id=...
     Route::post('/meal-records/toggle', [MealRecordController::class, 'toggle']);
+
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+    Route::get('/churches', function () {
+        return \App\Models\Camper::select('church')->distinct()->pluck('church')->filter()->values();
+    });
+    
 });
 
 

@@ -10,6 +10,7 @@ class Camper extends Model
     use HasFactory;
     
     protected $fillable = [
+        'camp_id',
         'identity_card',
         'first_name',
         'last_name',

@@ -15,11 +15,24 @@ class MealRecordController extends Controller
 
         $this->authorizeCampAccess($request->camp_id);
 
-        return MealRecord::with('camper')
-            ->whereHas('day', fn($q) => $q->where('camp_id', $request->camp_id))
-            ->where('day_id', $request->day_id)
-            ->get();
+        // Obtener todos los campistas del campamento
+        $campers = \App\Models\Camper::where('camp_id', $request->camp_id)->get();
+
+        // Obtener los registros de comida existentes para ese día
+        $mealRecords = MealRecord::where('day_id', $request->day_id)->get()->keyBy('camper_id');
+
+        // Combinar los datos
+        $data = $campers->map(function ($camper) use ($mealRecords) {
+            return [
+                'camper_id' => $camper->id,
+                'camper' => $camper,
+                'ate' => $mealRecords->has($camper->id) && $mealRecords[$camper->id]->has_eaten,
+            ];
+        });
+
+        return response()->json($data);
     }
+
 
     public function toggle(Request $request)
     {

@@ -16,7 +16,9 @@ export default function Authenticated({ user, header, children }) {
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
+                                    <img src="/images/severalreves.png" className="h-10" alt="Logo" />
+
+                                    {/* <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" /> */}
                                 </Link>
                             </div>
 
@@ -24,8 +26,21 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                                     Dashboard
                                 </NavLink>
-                                <NavLink href={route('camps')} active={route().current('camps')}>
-                                    Campamentos
+                                {user.role === 'superadmin' && (
+                                    <NavLink href={route('camps')} active={route().current('camps')}>
+                                        Campamentos
+                                    </NavLink>
+                                )}
+                                {user.role === 'superadmin' && (
+                                    <NavLink href={route('users')} active={route().current('users')}>
+                                        Usuarios
+                                    </NavLink>
+                                )}
+                                <NavLink href={route('campers')} active={route().current('campers')}>
+                                    Acampantes
+                                </NavLink>
+                                <NavLink href={route('meals')} active={route().current('meals')}>
+                                    Comidas
                                 </NavLink>
                             </div>
                         </div>
@@ -98,6 +113,19 @@ export default function Authenticated({ user, header, children }) {
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                             Dashboard
                         </ResponsiveNavLink>
+                        {user.role === 'superadmin' && (
+                            <ResponsiveNavLink href={route('camps')} active={route().current('camps')}>
+                                Campamentos
+                            </ResponsiveNavLink>
+                        )}
+                        {user.role === 'superadmin' && (
+                            <ResponsiveNavLink href={route('users')} active={route().current('users')}>
+                                Usuarios
+                            </ResponsiveNavLink>
+                        )}
+                        <ResponsiveNavLink href={route('campers')} active={route().current('campers')}>
+                            Acampantes
+                        </ResponsiveNavLink>
                     </div>
 
                     <div className="pt-4 pb-1 border-t border-gray-200">
@@ -107,9 +135,9 @@ export default function Authenticated({ user, header, children }) {
                         </div>
 
                         <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>Profile</ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('profile.edit')}>Mi Perfil</ResponsiveNavLink>
                             <ResponsiveNavLink method="post" href={route('logout')} as="button">
-                                Log Out
+                                Cerrar sesión
                             </ResponsiveNavLink>
                         </div>
                     </div>

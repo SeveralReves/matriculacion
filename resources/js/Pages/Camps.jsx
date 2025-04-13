@@ -73,7 +73,7 @@ export default function Camps({ auth }) {
         >
             <Head title="Campamentos" />
             <div className="max-w-6xl mx-auto py-10 px-4">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
                     <h1 className="text-2xl font-bold">Campamentos</h1>
                     <button
                         onClick={() => {

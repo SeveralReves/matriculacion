@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 use App\Models\Camp;
 use Illuminate\Http\Request;
+use App\Models\Day;
+use App\Models\Meal;
+use Carbon\Carbon;
 
 class CampController extends Controller
 {
@@ -19,7 +22,21 @@ class CampController extends Controller
         ]);
 
         $camp = Camp::create($request->only('name', 'start_date', 'end_date'));
+        $start = Carbon::parse($camp->start_date);
+        $end = Carbon::parse($camp->end_date);
+        
+        
+        $mealTypes = ['Desayuno', 'Almuerzo', 'Cena'];
 
+        for ($date = $start; $date->lte($end); $date->addDay()) {
+            foreach ($mealTypes as $meal) {
+                Day::create([
+                    'camp_id' => $camp->id,
+                    'date' => $date->toDateString(),
+                    'meal_type' => $meal,
+                ]);
+            }
+        }
         return response()->json($camp, 201);
     }
 
