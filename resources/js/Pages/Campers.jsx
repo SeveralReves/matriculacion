@@ -26,6 +26,7 @@ export default function Campers({ auth }) {
         gender: "male",
         serial: "",
         payment_method: "",
+        usd_amount: "",
         reference: "",
         comments: "",
     });
@@ -69,6 +70,7 @@ export default function Campers({ auth }) {
                     gender: "male",
                     serial: "",
                     payment_method: "",
+                    usd_amount: "",
                     reference: "",
                     comments: "",
                 });
@@ -98,6 +100,7 @@ export default function Campers({ auth }) {
             gender: camper.gender,
             serial: camper.serial,
             payment_method: camper.payment_method,
+            usd_amount: camper.usd_amount,
             reference: camper.reference || "",
             comments: camper.comments || "",
         });
@@ -208,6 +211,16 @@ export default function Campers({ auth }) {
                                         <option value="Divisas">Divisas</option>
                                         <option value="Custom">Personalizado (dejar comentario)</option>
                                     </select>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Monto en USD"
+                                        value={form.usd_amount}
+                                        onChange={e => setForm({ ...form, usd_amount: e.target.value })}
+                                        className={`border rounded p-2 ${errors.usd_amount ? 'border-red-500' : ''}`}
+                                        title={errors.usd_amount?.[0] || ""}
+                                        />
+
                                     <input type="text" placeholder="Referencia (opcional)" value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} className="border rounded p-2" />
                                 </div>
                                 <div className="flex items-center gap-2">

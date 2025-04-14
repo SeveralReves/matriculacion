@@ -9,8 +9,12 @@ use App\Http\Controllers\{
     CampController,
     DayController,
     MealRecordController,
-    UserController
+    UserController,
+    GuestController,
+    DashboardApiController,
+    GuestMealRecordController
 };
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -45,6 +49,10 @@ Route::get('/acampantes', function () {
 Route::get('/comidas', function () {
     return Inertia::render('Meals');
 })->middleware(middleware: ['auth', 'verified'])->name('meals');
+
+Route::get('/invitados', function () {
+    return Inertia::render('GuestsMeals');
+})->middleware(middleware: ['auth', 'verified'])->name('guests');
 
 
 
@@ -89,7 +97,14 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::get('/churches', function () {
         return \App\Models\Camper::select('church')->distinct()->pluck('church')->filter()->values();
     });
+
+    Route::get('/guests', [GuestController::class, 'index']);
+    Route::post('/guests', [GuestController::class, 'store']);
+    Route::post('/guest-meal-records/toggle', [GuestMealRecordController::class, 'toggle']);
     
+    Route::get('/dashboard/totals', [DashboardApiController::class, 'totals']);
+    Route::get('/dashboard/camp/{id}', [DashboardApiController::class, 'camp']);
+    Route::get('/dashboard/camp/{camp}/day/{day}', [DashboardApiController::class, 'campDay']);
 });
 
 

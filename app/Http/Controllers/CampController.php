@@ -19,9 +19,16 @@ class CampController extends Controller
             'name' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'image' => 'nullable|image|max:2048',
         ]);
-
-        $camp = Camp::create($request->only('name', 'start_date', 'end_date'));
+        
+        $data = $request->only('name', 'start_date', 'end_date');
+        
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('camps', 'public');
+        }
+        
+        $camp = Camp::create($data);
         $start = Carbon::parse($camp->start_date);
         $end = Carbon::parse($camp->end_date);
         
@@ -69,9 +76,16 @@ class CampController extends Controller
             'name' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'image' => 'nullable|image|max:2048',
         ]);
-
-        $camp->update($request->only('name', 'start_date', 'end_date'));
+         
+        $data = $request->only('name', 'start_date', 'end_date');
+        
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('camps', 'public');
+        }
+        
+        $camp->update($data);
 
         return response()->json($camp);
     }

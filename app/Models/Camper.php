@@ -23,6 +23,7 @@ class Camper extends Model
         'gender',
         'serial',
         'payment_method',
+        'usd_amount',
         'reference',
         'comments',
     ];

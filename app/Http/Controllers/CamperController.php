@@ -32,6 +32,7 @@ class CamperController extends Controller
             'serial' => 'required|string|unique:campers',
             'payment_method' => 'required|string',
             'reference' => 'nullable|string',
+            'usd_amount' => 'nullable|numeric|min:0',
             'comments' => 'nullable|string',
         ]);
 
@@ -58,6 +59,7 @@ class CamperController extends Controller
             'serial' => 'required|string|unique:campers,serial,' . $camper->id,
             'payment_method' => 'required|string',
             'reference' => 'nullable|string',
+            'usd_amount' => 'nullable|numeric|min:0',
             'comments' => 'nullable|string',
         ]);
 
