@@ -3,7 +3,7 @@ import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { fetchWithAuth } from "@/utils/axiosInstance";
-import DataTable from '@/Components/DataTable';
+import DataTable from "@/Components/DataTable";
 
 export default function Camps({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -19,9 +19,9 @@ export default function Camps({ auth }) {
     const [imagePreview, setImagePreview] = useState(null);
 
     const columns = [
-        { key: 'name', label: 'Nombre' },
-        { key: 'start_date', label: 'Inicio' },
-        { key: 'end_date', label: 'Fin' },
+        { key: "name", label: "Nombre" },
+        { key: "start_date", label: "Inicio" },
+        { key: "end_date", label: "Fin" },
     ];
 
     useEffect(() => {
@@ -32,28 +32,39 @@ export default function Camps({ auth }) {
         e.preventDefault();
         const method = isEditing ? "post" : "post";
         const url = isEditing ? `/api/camps/${editId}` : "/api/camps";
-
         const formData = new FormData();
         formData.append("name", form.name);
         formData.append("start_date", form.start_date);
         formData.append("end_date", form.end_date);
         if (imageFile) formData.append("image", imageFile);
 
-        axios[method](url, formData, {
-            headers: { "Content-Type": "multipart/form-data", 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        }).then((res) => {
-            if (isEditing) {
-                setCamps((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
-            } else {
-                setCamps((prev) => [...prev, res.data]);
-            }
-            setForm({ name: "", start_date: "", end_date: "" });
-            setImageFile(null);
-            setImagePreview(null);
-            setIsEditing(false);
-            setEditId(null);
-            setShowModal(false);
-        });
+        // Si estamos editando, agregamos el override del método
+        if (isEditing) formData.append("_method", "PUT");
+
+        axios
+            .post(url, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                },
+            })
+            .then((res) => {
+                if (isEditing) {
+                    setCamps((prev) =>
+                        prev.map((c) => (c.id === editId ? res.data : c))
+                    );
+                } else {
+                    setCamps((prev) => [...prev, res.data]);
+                }
+                setForm({ name: "", start_date: "", end_date: "" });
+                setImageFile(null);
+                setImagePreview(null);
+                setIsEditing(false);
+                setEditId(null);
+                setShowModal(false);
+            });
     };
 
     const handleEdit = (camp) => {
@@ -70,19 +81,27 @@ export default function Camps({ auth }) {
 
     const handleDelete = (id) => {
         if (!confirm("¿Seguro que quieres eliminar este campamento?")) return;
-        axios.delete(`/api/camps/${id}`,{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then(() => {
-            setCamps((prev) => prev.filter((c) => c.id !== id));
-        });
+        axios
+            .delete(`/api/camps/${id}`, {
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                },
+            })
+            .then(() => {
+                setCamps((prev) => prev.filter((c) => c.id !== id));
+            });
     };
 
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Campamentos</h2>}
+            header={
+                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                    Campamentos
+                </h2>
+            }
         >
             <Head title="Campamentos" />
             <div className="max-w-6xl mx-auto py-10 px-4">
@@ -113,28 +132,49 @@ export default function Camps({ auth }) {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
                             <h2 className="text-lg font-bold mb-4">
-                                {isEditing ? "Editar campamento" : "Crear nuevo campamento"}
+                                {isEditing
+                                    ? "Editar campamento"
+                                    : "Crear nuevo campamento"}
                             </h2>
-                            <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
+                            <form
+                                onSubmit={handleSubmit}
+                                className="space-y-4"
+                                encType="multipart/form-data"
+                            >
                                 <input
                                     type="text"
                                     placeholder="Nombre"
                                     value={form.name}
-                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            name: e.target.value,
+                                        })
+                                    }
                                     className="w-full border rounded p-2"
                                     required
                                 />
                                 <input
                                     type="date"
                                     value={form.start_date}
-                                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            start_date: e.target.value,
+                                        })
+                                    }
                                     className="w-full border rounded p-2"
                                     required
                                 />
                                 <input
                                     type="date"
                                     value={form.end_date}
-                                    onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            end_date: e.target.value,
+                                        })
+                                    }
                                     className="w-full border rounded p-2"
                                 />
                                 <input
@@ -143,7 +183,9 @@ export default function Camps({ auth }) {
                                     onChange={(e) => {
                                         const file = e.target.files[0];
                                         setImageFile(file);
-                                        setImagePreview(URL.createObjectURL(file));
+                                        setImagePreview(
+                                            URL.createObjectURL(file)
+                                        );
                                     }}
                                 />
                                 {imagePreview && (

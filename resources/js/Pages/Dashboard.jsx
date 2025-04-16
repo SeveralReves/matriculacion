@@ -36,7 +36,7 @@ export default function Dashboard({ auth }) {
         <AuthenticatedLayout user={auth.user}>
             <Head title="Dashboard" />
             <div className="max-w-7xl mx-auto py-10 px-4">
-            {user.role === 'superadmin' && (
+            {auth.user.role === 'superadmin' && (
                 <>
                     <h1 className="text-2xl font-bold mb-6">Resumen general</h1>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
