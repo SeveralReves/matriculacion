@@ -24,7 +24,7 @@ export default function Authenticated({ user, header, children }) {
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
-                                    Dashboard
+                                Reporte
                                 </NavLink>
                                 {user.role === 'superadmin' && (
                                     <NavLink href={route('camps')} active={route().current('camps')}>
@@ -114,7 +114,7 @@ export default function Authenticated({ user, header, children }) {
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
-                            Dashboard
+                            Reporte
                         </ResponsiveNavLink>
                         {user.role === 'superadmin' && (
                             <ResponsiveNavLink href={route('camps')} active={route().current('camps')}>
@@ -128,6 +128,12 @@ export default function Authenticated({ user, header, children }) {
                         )}
                         <ResponsiveNavLink href={route('campers')} active={route().current('campers')}>
                             Acampantes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('meals')} active={route().current('meals')}>
+                            Comidas
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('guests')} active={route().current('guests')}>
+                            Invitados
                         </ResponsiveNavLink>
                     </div>
 

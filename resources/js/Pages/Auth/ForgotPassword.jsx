@@ -12,7 +12,11 @@ export default function ForgotPassword({ status }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('password.email'));
+        post(route('password.email'), {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
     };
 
     return (

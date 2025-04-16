@@ -47,6 +47,10 @@ export default function GuestsMeals({ auth }) {
             ...form,
             camp_id: selectedCampId,
             day_id: selectedDayId,
+        },{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
         }).then((res) => {
             setGuests((prev) => [...prev, res.data]);
             setForm({
@@ -66,6 +70,10 @@ export default function GuestsMeals({ auth }) {
         axios.post("/api/guest-meal-records/toggle", {
             guest_id: guestId,
             day_id: selectedDayId,
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
         }).then(() => {
             setGuests((prev) =>
                 prev.map((g) =>

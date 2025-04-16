@@ -36,18 +36,23 @@ export default function Dashboard({ auth }) {
         <AuthenticatedLayout user={auth.user}>
             <Head title="Dashboard" />
             <div className="max-w-7xl mx-auto py-10 px-4">
-                <h1 className="text-2xl font-bold mb-6">Resumen general</h1>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div className="p-4 bg-white rounded shadow">
-                        Campamentos: <strong>{totals.camps}</strong>
+            {user.role === 'superadmin' && (
+                <>
+                    <h1 className="text-2xl font-bold mb-6">Resumen general</h1>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div className="p-4 bg-white rounded shadow">
+                            Campamentos: <strong>{totals.camps}</strong>
+                        </div>
+                        <div className="p-4 bg-white rounded shadow">
+                            Usuarios: <strong>{totals.users}</strong>
+                        </div>
+                        <div className="p-4 bg-white rounded shadow">
+                            Acampantes: <strong>{totals.campers}</strong>
+                        </div>
                     </div>
-                    <div className="p-4 bg-white rounded shadow">
-                        Usuarios: <strong>{totals.users}</strong>
-                    </div>
-                    <div className="p-4 bg-white rounded shadow">
-                        Acampantes: <strong>{totals.campers}</strong>
-                    </div>
-                </div>
+                </>
+
+            )}
 
                 <h2 className="text-xl font-bold mb-2">
                     Estadísticas por campamento

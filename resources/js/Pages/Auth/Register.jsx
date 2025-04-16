@@ -23,7 +23,11 @@ export default function Register() {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('register'));
+        post(route('register'), {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
     };
 
     return (

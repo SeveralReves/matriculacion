@@ -29,7 +29,11 @@ export default function Users({ auth }) {
         const method = isEditing ? "put" : "post";
         const url = isEditing ? `/api/users/${editId}` : "/api/users";
 
-        axios[method](url, form).then((res) => {
+        axios[method](url, form,{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then((res) => {
             if (isEditing) {
                 setUsers((prev) => prev.map((u) => (u.id === editId ? res.data : u)));
             } else {
@@ -57,7 +61,11 @@ export default function Users({ auth }) {
 
     const handleDelete = (id) => {
         if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
-        axios.delete(`/api/users/${id}`).then(() => {
+        axios.delete(`/api/users/${id}`,{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then(() => {
             setUsers((prev) => prev.filter((u) => u.id !== id));
         });
     };

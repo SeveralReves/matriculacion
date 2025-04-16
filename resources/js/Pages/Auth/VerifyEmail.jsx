@@ -8,7 +8,11 @@ export default function VerifyEmail({ status }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('verification.send'));
+        post(route('verification.send'), {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
     };
 
     return (

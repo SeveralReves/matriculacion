@@ -23,7 +23,11 @@ export default function ResetPassword({ token, email }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('password.store'));
+        post(route('password.store'), {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
     };
 
     return (

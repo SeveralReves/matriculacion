@@ -40,7 +40,7 @@ export default function Camps({ auth }) {
         if (imageFile) formData.append("image", imageFile);
 
         axios[method](url, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: { "Content-Type": "multipart/form-data", 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
         }).then((res) => {
             if (isEditing) {
                 setCamps((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
@@ -70,7 +70,11 @@ export default function Camps({ auth }) {
 
     const handleDelete = (id) => {
         if (!confirm("¿Seguro que quieres eliminar este campamento?")) return;
-        axios.delete(`/api/camps/${id}`).then(() => {
+        axios.delete(`/api/camps/${id}`,{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then(() => {
             setCamps((prev) => prev.filter((c) => c.id !== id));
         });
     };

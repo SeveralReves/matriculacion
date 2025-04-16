@@ -34,6 +34,10 @@ export default function Meals({ auth }) {
             camp_id: selectedCampId,
             day_id: selectedDayId,
             camper_id: camperId,
+        },{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
         }).then((res) => {
             setRecords((prev) =>
                 prev.map((r) =>

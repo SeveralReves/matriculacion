@@ -48,7 +48,11 @@ export default function Campers({ auth }) {
         const method = isEditing ? "put" : "post";
         const url = isEditing ? `/api/campers/${editId}` : "/api/campers";
 
-        axios[method](url, { ...form, camp_id: parseInt(selectedCampId) })
+        axios[method](url, { ...form, camp_id: parseInt(selectedCampId) },{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
             .then((res) => {
                 if (isEditing) {
                     setCampers((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
@@ -112,7 +116,11 @@ export default function Campers({ auth }) {
 
     const handleDelete = (id) => {
         if (!confirm("¿Seguro que quieres eliminar este acampante?")) return;
-        axios.delete(`/api/campers/${id}`).then(() => {
+        axios.delete(`/api/campers/${id}`,{
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        }).then(() => {
             setCampers((prev) => prev.filter((c) => c.id !== id));
         });
     };
