@@ -88,7 +88,7 @@ export default function GuestsMeals({ auth }) {
             <Head title="Invitados - Comidas" />
             <div className="max-w-6xl mx-auto py-10 px-4">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-                    <div className="flex gap-4 w-full md:w-auto">
+                    <div className="grid md:grid-cols-2 gap-4 mb-6">
                         <select
                             className="border rounded p-2"
                             value={selectedCampId || ""}

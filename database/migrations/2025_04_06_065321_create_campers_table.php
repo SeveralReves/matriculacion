@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('church');
             $table->date('birth_date');
             $table->string('email');
-            $table->string('zone');
+            $table->foreignId('zone_id')->constrained()->onDelete('cascade');
             $table->string('color');
             $table->boolean('baptized')->default(false);
             $table->enum('gender', ['male', 'female', 'other']);

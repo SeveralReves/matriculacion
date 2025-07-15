@@ -31,10 +31,12 @@ export default function Campers({ auth }) {
         comments: "",
     });
     const [churches, setChurches] = useState([]);
+    const [zones, setZones] = useState([]);
 
     useEffect(() => {
         axios.get("/api/camps").then((res) => setCamps(res.data));
         axios.get('/api/churches').then((res) => setChurches(res.data));
+        axios.get('/api/zones').then((res) => setZones(res.data));
     }, []);
 
     useEffect(() => {
@@ -201,14 +203,29 @@ export default function Campers({ auth }) {
                                     </datalist>
 
                                     <input type="date" placeholder="Nacimiento" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} className={`border rounded p-2 ${errors.birth_date ? 'border-red-500' : ''}`} title={errors.birth_date?.[0] || ""} />
-                                    <select value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`} title={errors.zone?.[0] || ""}>
+
+                                    <input
+                                        list="zones"
+                                        type="text"
+                                        placeholder="Zona o Distrito"
+                                        value={form.zone}
+                                        onChange={e => setForm({ ...form, church: e.target.value })}
+                                        className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`}
+                                        title={errors.zone?.[0] || ""}
+                                    />
+                                    <datalist id="zones">
+                                        {zones.map((church, idx) => (
+                                            <option key={idx} value={church} />
+                                        ))}
+                                    </datalist>
+                                    {/* <select value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`} title={errors.zone?.[0] || ""}>
                                         <option value="" disabled selected>Selecciona zona</option>
                                         <option value="I">I</option>
                                         <option value="II">II</option>
                                         <option value="III">III</option>
                                         <option value="IV">IV</option>
                                         <option value="V">V</option>
-                                    </select>
+                                    </select> */}
                                     <input type="text" placeholder="Equipo" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className={`border rounded p-2 ${errors.color ? 'border-red-500' : ''}`} title={errors.color?.[0] || ""} />
                                     <input type="text" placeholder="Serial" value={form.serial} onChange={e => setForm({ ...form, serial: e.target.value })} className={`border rounded p-2 ${errors.serial ? 'border-red-500' : ''}`} title={errors.serial?.[0] || ""} required />
                                     <select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })} className={`border rounded p-2 ${errors.payment_method ? 'border-red-500' : ''}`} title={errors.payment_method?.[0] || ""} required>

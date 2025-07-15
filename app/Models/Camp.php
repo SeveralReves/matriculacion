@@ -25,4 +25,8 @@ class Camp extends Model
     {
         return $this->belongsToMany(User::class);
     }
+    public function zones()
+    {
+        return $this->hasMany(Zone::class);
+    }
 }

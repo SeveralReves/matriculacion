@@ -82,7 +82,7 @@ export default function Dashboard({ auth }) {
                                 <img
                                     src={`/storage/${campStats.image_path}`}
                                     alt="Campamento"
-                                    className="w-full max-h-52 object-cover mt-2 rounded"
+                                    className="max-h-52 object-cover mt-2 rounded"
                                 />
                             ) : (
                                 <p className="text-gray-500 italic">

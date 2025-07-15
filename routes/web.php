@@ -97,6 +97,9 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::get('/churches', function () {
         return \App\Models\Camper::select('church')->distinct()->pluck('church')->filter()->values();
     });
+    Route::get('/zones', function () {
+        return \App\Models\Camper::select('zone')->distinct()->pluck('zone')->filter()->values();
+    });
 
     Route::get('/guests', [GuestController::class, 'index']);
     Route::post('/guests', [GuestController::class, 'store']);
