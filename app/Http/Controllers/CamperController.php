@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 use App\Models\Camper;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\CampersImport;
+use App\Exports\CampersExport;
+use App\Models\Camp;
 
 class CamperController extends Controller
 {
@@ -93,7 +97,25 @@ class CamperController extends Controller
         $camper->delete();
         return response()->noContent();
     }
+    public function import(Request $request, Camp $camp)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls'
+        ]);
 
+        $this->authorizeCampAccess($camp->id);
+
+        Excel::import(new CampersImport($camp->id), $request->file('file'));
+
+        return response()->json(['message' => 'Importación exitosa.']);
+    }
+
+    public function export(Camp $camp)
+    {
+        $this->authorizeCampAccess($camp->id);
+
+        return Excel::download(new CampersExport($camp->id), 'acampantes.xlsx');
+    }
     private function authorizeCampAccess($campId)
     {
         $user = auth()->user();

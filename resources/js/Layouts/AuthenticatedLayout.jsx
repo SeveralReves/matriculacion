@@ -48,6 +48,9 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('guests')} active={route().current('guests')}>
                                     Invitados
                                 </NavLink>
+                                <NavLink href={route('imports')} active={route().current('imports')}>
+                                    Importar/Exportar
+                                </NavLink>
                             </div>
                         </div>
 

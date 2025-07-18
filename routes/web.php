@@ -59,6 +59,10 @@ Route::get('/invitados', function () {
     return Inertia::render('GuestsMeals');
 })->middleware(middleware: ['auth', 'verified'])->name('guests');
 
+Route::get('/importar-acampantes', function () {
+    return Inertia::render('ImportExport');
+})->middleware(middleware: ['auth', 'verified'])->name('imports');
+
 
 
 Route::middleware('auth')->group(function () {
@@ -120,6 +124,10 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
     Route::post('/rooms/{room}/assign-campers', [RoomController::class, 'assignCampers']);
     Route::get('/rooms/{room}/campers', [RoomController::class, 'campers']);
+
+    Route::post('/camps/{camp}/campers/import', [CamperController::class, 'import']);
+    Route::get('/camps/{camp}/campers/export', [CamperController::class, 'export']);
+
 });
 
 
