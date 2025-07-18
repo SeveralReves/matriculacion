@@ -41,5 +41,9 @@ class Camper extends Model
     {
         return $this->belongsTo(Zone::class);
     }
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
 
 }

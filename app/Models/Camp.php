@@ -29,4 +29,9 @@ class Camp extends Model
     {
         return $this->hasMany(Zone::class);
     }
+    public function rooms()
+    {
+        return $this->hasMany(Room::class);
+    }
+
 }

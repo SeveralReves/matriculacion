@@ -12,6 +12,7 @@ use App\Http\Controllers\{
     UserController,
     GuestController,
     DashboardApiController,
+    RoomController,
     GuestMealRecordController
 };
 
@@ -49,6 +50,10 @@ Route::get('/acampantes', function () {
 Route::get('/comidas', function () {
     return Inertia::render('Meals');
 })->middleware(middleware: ['auth', 'verified'])->name('meals');
+
+Route::get('/dormitorios', function () {
+    return Inertia::render('Rooms');
+})->middleware(middleware: ['auth', 'verified'])->name('rooms');
 
 Route::get('/invitados', function () {
     return Inertia::render('GuestsMeals');
@@ -108,6 +113,12 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::get('/dashboard/totals', [DashboardApiController::class, 'totals']);
     Route::get('/dashboard/camp/{id}', [DashboardApiController::class, 'camp']);
     Route::get('/dashboard/camp/{camp}/day/{day}', [DashboardApiController::class, 'campDay']);
+
+    Route::get('/camps/{camp}/rooms', [RoomController::class, 'index']);
+    Route::post('/camps/{camp}/rooms', [RoomController::class, 'store']);
+    Route::put('/rooms/{room}', [RoomController::class, 'update']);
+    Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
+
 });
 
 

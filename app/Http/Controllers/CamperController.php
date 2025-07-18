@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Camper;
+use App\Models\Room;
 use Illuminate\Http\Request;
 
 class CamperController extends Controller
@@ -32,9 +33,18 @@ class CamperController extends Controller
             'serial' => 'required|string|unique:campers',
             'payment_method' => 'required|string',
             'reference' => 'nullable|string',
+            'room_id' => 'nullable|exists:rooms,id',
             'usd_amount' => 'nullable|numeric|min:0',
             'comments' => 'nullable|string',
         ]);
+
+        if ($request->room_id) {
+            $room = Room::findOrFail($request->room_id);
+            if ($room->max_capacity && $room->campers()->count() >= $room->max_capacity) {
+                return response()->json(['message' => 'La habitación ya está llena.'], 422);
+            }
+        }
+
 
         $camper = Camper::create($validated);
 
@@ -43,7 +53,6 @@ class CamperController extends Controller
 
     public function update(Request $request, Camper $camper)
     {
-        $this->authorizeCampAccess($camper->camp_id);
 
         $validated = $request->validate([
             'identity_card' => 'nullable|string',
@@ -54,6 +63,7 @@ class CamperController extends Controller
             'email' => 'required|email',
             'zone' => 'required|string',
             'color' => 'required|string',
+            'room_id' => 'nullable|exists:rooms,id',
             'baptized' => 'boolean',
             'gender' => 'required|in:male,female,other',
             'serial' => 'required|string|unique:campers,serial,' . $camper->id,
@@ -62,6 +72,15 @@ class CamperController extends Controller
             'usd_amount' => 'nullable|numeric|min:0',
             'comments' => 'nullable|string',
         ]);
+        
+        if ($request->room_id) {
+            $room = Room::findOrFail($request->room_id);
+            if ($room->max_capacity && $room->campers()->count() >= $room->max_capacity) {
+                return response()->json(['message' => 'La habitación ya está llena.'], 422);
+            }
+        }
+
+        $this->authorizeCampAccess($camper->camp_id);
 
         $camper->update($validated);
 

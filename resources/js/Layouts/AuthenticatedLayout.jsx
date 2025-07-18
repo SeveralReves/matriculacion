@@ -36,6 +36,9 @@ export default function Authenticated({ user, header, children }) {
                                         Usuarios
                                     </NavLink>
                                 )}
+                                <NavLink href={route('rooms')} active={route().current('rooms')}>
+                                    Dormitorios
+                                </NavLink>
                                 <NavLink href={route('campers')} active={route().current('campers')}>
                                     Acampantes
                                 </NavLink>
