@@ -1,6 +1,6 @@
-import { FaTrash, FaEdit } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaBed } from 'react-icons/fa';
 
-export default function DataTable({ columns = [], data = [], onEdit, onDelete }) {
+export default function DataTable({ columns = [], data = [], onEdit, onDelete, onAssign }) {
     return (
         <div className="overflow-x-auto">
             <table className="w-full border text-left min-w-max">
@@ -39,6 +39,14 @@ export default function DataTable({ columns = [], data = [], onEdit, onDelete })
                                                 className="text-blue-600 hover:text-blue-800"
                                             >
                                                 <FaEdit />
+                                            </button>
+                                        )}
+                                        {onAssign && (
+                                            <button
+                                                onClick={() => onAssign(item.id)}
+                                                className="text-orange-600 hover:text-orange-800"
+                                            >
+                                                <FaBed />
                                             </button>
                                         )}
                                         {onDelete && (

@@ -209,13 +209,13 @@ export default function Campers({ auth }) {
                                         type="text"
                                         placeholder="Zona o Distrito"
                                         value={form.zone}
-                                        onChange={e => setForm({ ...form, church: e.target.value })}
+                                        onChange={e => setForm({ ...form, zone: e.target.value })}
                                         className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`}
                                         title={errors.zone?.[0] || ""}
                                     />
                                     <datalist id="zones">
-                                        {zones.map((church, idx) => (
-                                            <option key={idx} value={church} />
+                                        {zones.map((zone, idx) => (
+                                            <option key={idx} value={zone} />
                                         ))}
                                     </datalist>
                                     {/* <select value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`} title={errors.zone?.[0] || ""}>

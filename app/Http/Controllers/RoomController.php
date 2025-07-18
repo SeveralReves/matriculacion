@@ -58,6 +58,25 @@ class RoomController extends Controller
         $room->delete();
         return response()->noContent();
     }
+    public function assignCampers(Request $request, Room $room)
+    {
+        $this->authorizeCampAccess($room->camp_id);
+
+        $validated = $request->validate([
+            'camper_ids' => 'array',
+            'camper_ids.*' => 'exists:campers,id'
+        ]);
+
+        // Elimina los campers actuales de esta habitación
+        \DB::table('campers')->where('room_id', $room->id)->update(['room_id' => null]);
+
+        // Asigna los nuevos
+        \DB::table('campers')->whereIn('id', $validated['camper_ids'])->update(['room_id' => $room->id]);
+
+        return response()->noContent();
+    }
+
+    
 
     private function authorizeCampAccess($campId)
     {

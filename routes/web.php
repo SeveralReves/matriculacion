@@ -118,7 +118,8 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::post('/camps/{camp}/rooms', [RoomController::class, 'store']);
     Route::put('/rooms/{room}', [RoomController::class, 'update']);
     Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
-
+    Route::post('/rooms/{room}/assign-campers', [RoomController::class, 'assignCampers']);
+    Route::get('/rooms/{room}/campers', [RoomController::class, 'campers']);
 });
 
 
