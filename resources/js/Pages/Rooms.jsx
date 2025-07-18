@@ -108,8 +108,6 @@ export default function Rooms({ auth }) {
         // 3. Filtra por género (o muestra todos si el cuarto es "ambos")
         const filtered = allCampersRes.data.filter(camper => {
             const notAssignedElsewhere = camper.room_id === null || assignedIds.includes(camper.id);
-            console.log('room.gender',room.gender)
-            console.log('camper.gender',translateGender(camper.gender).toLowerCase())
             const genderMatch =
                 room.gender === "ambos" || translateGender(camper.gender).toLowerCase() === room.gender;
             return notAssignedElsewhere && genderMatch;

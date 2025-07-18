@@ -29,19 +29,23 @@ export default function Campers({ auth }) {
         usd_amount: "",
         reference: "",
         comments: "",
+        room_id: null,
     });
     const [churches, setChurches] = useState([]);
     const [zones, setZones] = useState([]);
+    const [rooms, setRooms] = useState([]);
 
     useEffect(() => {
         axios.get("/api/camps").then((res) => setCamps(res.data));
         axios.get('/api/churches').then((res) => setChurches(res.data));
         axios.get('/api/zones').then((res) => setZones(res.data));
+        
     }, []);
 
     useEffect(() => {
         if (selectedCampId) {
             axios.get(`/api/camps/${selectedCampId}/campers`).then((res) => setCampers(res.data));
+            axios.get(`/api/camps/${selectedCampId}/rooms`).then((res) => setRooms(res.data));
         }
     }, [selectedCampId]);
 
@@ -79,6 +83,7 @@ export default function Campers({ auth }) {
                     usd_amount: "",
                     reference: "",
                     comments: "",
+                    room_id: null,
                 });
                 setIsEditing(false);
                 setEditId(null);
@@ -109,6 +114,7 @@ export default function Campers({ auth }) {
             usd_amount: camper.usd_amount,
             reference: camper.reference || "",
             comments: camper.comments || "",
+            room_id: camper.room_id || null,
         });
         setIsEditing(true);
         setEditId(camper.id);
@@ -218,6 +224,19 @@ export default function Campers({ auth }) {
                                             <option key={idx} value={zone} />
                                         ))}
                                     </datalist>
+                                    <select
+                                        value={form.room_id || ""}
+                                        onChange={(e) => setForm({ ...form, room_id: e.target.value || null })}
+                                        className="w-full border rounded p-2"
+                                    >
+                                        <option value="">Sin habitación asignada</option>
+                                        {rooms.map((room) => (
+                                            <option key={room.id} value={room.id}>
+                                                {room.name} ({room.gender}) - {room.campers_count}/{room.max_capacity || '∞'}
+                                            </option>
+                                        ))}
+                                    </select>
+
                                     {/* <select value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} className={`border rounded p-2 ${errors.zone ? 'border-red-500' : ''}`} title={errors.zone?.[0] || ""}>
                                         <option value="" disabled selected>Selecciona zona</option>
                                         <option value="I">I</option>
