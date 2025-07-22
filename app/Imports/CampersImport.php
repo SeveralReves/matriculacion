@@ -25,7 +25,7 @@ class CampersImport implements ToModel, WithHeadingRow
             'gender'      => $row['gender'],
             'age'         => $row['age'],
             'church'      => $row['church'] ?? null,
-            'zone_id'     => null,
+            'zone'     => null,
             'room_id'     => null,
         ]);
     }

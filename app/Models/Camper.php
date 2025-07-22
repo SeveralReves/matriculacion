@@ -16,6 +16,7 @@ class Camper extends Model
         'last_name',
         'church',
         'birth_date',
+        'age',
         'email',
         'zone',
         'color',

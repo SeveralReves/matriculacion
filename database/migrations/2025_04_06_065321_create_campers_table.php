@@ -17,9 +17,11 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('church');
-            $table->date('birth_date');
+            $table->date('birth_date')->nullable(); // Ahora es opcional
+            $table->unsignedTinyInteger('age')->nullable(); // Edad opcional (0-255)
             $table->string('email');
-            $table->foreignId('zone_id')->constrained()->onDelete('cascade');
+            // $table->foreignId('zone_id')->constrained()->onDelete('cascade');
+            $table->string('zone');
             $table->string('color');
             $table->boolean('baptized')->default(false);
             $table->enum('gender', ['male', 'female', 'other']);
@@ -31,7 +33,6 @@ return new class extends Migration
             $table->timestamps();
         });
     }
-
 
     /**
      * Reverse the migrations.
