@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { fetchWithAuth } from "@/utils/axiosInstance";
 import DataTable from "@/Components/DataTable";
+import { showSuccess, showError, showConfirm, showToast } from '@/utils/swalHelper';
 
 export default function Camps({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -28,44 +29,45 @@ export default function Camps({ auth }) {
         fetchWithAuth("get", "/api/camps").then((res) => setCamps(res.data));
     }, []);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const method = isEditing ? "post" : "post";
-        const url = isEditing ? `/api/camps/${editId}` : "/api/camps";
+
+        const url = isEditing ? `/api/camps/${editId}` : '/api/camps';
         const formData = new FormData();
         formData.append("name", form.name);
         formData.append("start_date", form.start_date);
         formData.append("end_date", form.end_date);
         if (imageFile) formData.append("image", imageFile);
-
-        // Si estamos editando, agregamos el override del método
         if (isEditing) formData.append("_method", "PUT");
 
-        axios
-            .post(url, formData, {
+        try {
+            await axios.post(url, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]'
-                    ).content,
                 },
-            })
-            .then((res) => {
-                if (isEditing) {
-                    setCamps((prev) =>
-                        prev.map((c) => (c.id === editId ? res.data : c))
-                    );
-                } else {
-                    setCamps((prev) => [...prev, res.data]);
-                }
-                setForm({ name: "", start_date: "", end_date: "" });
-                setImageFile(null);
-                setImagePreview(null);
-                setIsEditing(false);
-                setEditId(null);
-                setShowModal(false);
             });
+
+            showSuccess(
+                isEditing ? 'Campamento actualizado' : 'Campamento creado'
+            );
+
+            fetchWithAuth("get", "/api/camps").then((res) => setCamps(res.data));
+
+            setForm({ name: "", start_date: "", end_date: "" });
+            setImageFile(null);
+            setImagePreview(null);
+            setIsEditing(false);
+            setEditId(null);
+            setShowModal(false);
+        } catch (error) {
+            showError(
+                'Error al guardar',
+                error?.response?.data?.message || 'Intenta de nuevo.'
+            );
+            console.error(error);
+        }
     };
+
 
     const handleEdit = (camp) => {
         setForm({
@@ -79,20 +81,28 @@ export default function Camps({ auth }) {
         setShowModal(true);
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("¿Seguro que quieres eliminar este campamento?")) return;
-        axios
-            .delete(`/api/camps/${id}`, {
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]'
-                    ).content,
-                },
-            })
-            .then(() => {
-                setCamps((prev) => prev.filter((c) => c.id !== id));
-            });
+    const handleDelete = async (id) => {
+        const result = await showConfirm(
+            '¿Eliminar campamento?',
+            'Esta acción no se puede deshacer',
+            'Sí, eliminar'
+        );
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await axios.delete(`/api/camps/${id}`);
+            setCamps((prev) => prev.filter((c) => c.id !== id));
+            showSuccess('Eliminado correctamente');
+        } catch (error) {
+            showError(
+                'Error al eliminar',
+                error?.response?.data?.message || 'Ocurrió un error inesperado'
+            );
+            console.error(error);
+        }
     };
+
 
     return (
         <AuthenticatedLayout

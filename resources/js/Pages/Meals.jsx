@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
+import { showSuccess, showError, showToast } from '@/utils/swalHelper';
 
 export default function Meals({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -29,23 +30,29 @@ export default function Meals({ auth }) {
         }
     }, [selectedCampId, selectedDayId]);
 
-    const toggleMeal = (camperId) => {
-        axios.post("/api/meal-records/toggle", {
-            camp_id: selectedCampId,
-            day_id: selectedDayId,
-            camper_id: camperId,
-        },{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then((res) => {
+    const toggleMeal = async (camperId) => {
+        try {
+            await axios.post("/api/meal-records/toggle", {
+                camp_id: selectedCampId,
+                day_id: selectedDayId,
+                camper_id: camperId,
+            });
+
             setRecords((prev) =>
                 prev.map((r) =>
                     r.camper_id === camperId ? { ...r, ate: !r.ate } : r
                 )
             );
-        });
+
+            showToast("success", "Registro actualizado");
+        } catch (error) {
+            showError(
+                "Error al actualizar comida",
+                error?.response?.data?.message || "Intenta nuevamente."
+            );
+        }
     };
+
 
     const filtered = records.filter((r) => {
         const text = `${r.camper.first_name} ${r.camper.last_name} ${r.camper.email} ${r.camper.serial}`.toLowerCase();

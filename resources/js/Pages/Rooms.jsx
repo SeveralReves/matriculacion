@@ -3,6 +3,7 @@ import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
+import { showSuccess, showError, showConfirm } from '@/utils/swalHelper';
 
 export default function Rooms({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -33,7 +34,7 @@ export default function Rooms({ auth }) {
     const transformedRooms = rooms.map(room => ({
         id: room.id,
         name: room.name,
-        capacity: `${room.campers_count}/${room.max_capacity || '---'}`,
+        capacity: `${room?.campers_count || 0}/${room.max_capacity || '---'}`,
         gender: room.gender.charAt(0).toUpperCase() + room.gender.slice(1),
         description: room.description || '',
     }));
@@ -51,26 +52,41 @@ export default function Rooms({ auth }) {
         }
     }, [selectedCampId]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!selectedCampId) return;
 
         const method = isEditing ? "put" : "post";
-        const url = isEditing ? `/api/rooms/${editId}` : `/api/camps/${selectedCampId}/rooms`;
+        const url = isEditing
+            ? `/api/rooms/${editId}`
+            : `/api/camps/${selectedCampId}/rooms`;
         const payload = { ...form };
 
-        axios[method](url, payload).then(res => {
+        try {
+            const res = await axios[method](url, payload);
+
             if (isEditing) {
-                setRooms(prev => prev.map(r => r.id === editId ? res.data : r));
+                setRooms((prev) =>
+                    prev.map((r) => (r.id === editId ? res.data : r))
+                );
+                showSuccess("Habitación actualizada");
             } else {
-                setRooms(prev => [...prev, res.data]);
+                setRooms((prev) => [...prev, res.data]);
+                showSuccess("Habitación creada");
             }
+
             setForm({ name: "", max_capacity: "", gender: "ambos", description: "" });
             setIsEditing(false);
             setEditId(null);
             setShowModal(false);
-        });
+        } catch (error) {
+            showError(
+                "Error al guardar",
+                error?.response?.data?.message || "Intenta de nuevo."
+            );
+        }
     };
+
 
     const handleEdit = (room) => {
         setForm({
@@ -84,12 +100,26 @@ export default function Rooms({ auth }) {
         setShowModal(true);
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("¿Seguro que deseas eliminar esta habitación?")) return;
-        axios.delete(`/api/rooms/${id}`).then(() => {
-            setRooms(prev => prev.filter(r => r.id !== id));
-        });
+   const handleDelete = async (id) => {
+        const result = await showConfirm(
+            "¿Eliminar habitación?",
+            "Esta acción no se puede deshacer.",
+            "Sí, eliminar"
+        );
+        if (!result.isConfirmed) return;
+
+        try {
+            await axios.delete(`/api/rooms/${id}`);
+            setRooms((prev) => prev.filter((r) => r.id !== id));
+            showSuccess("Habitación eliminada");
+        } catch (error) {
+            showError(
+                "Error al eliminar",
+                error?.response?.data?.message || "Intenta de nuevo."
+            );
+        }
     };
+
     
     const handleManageCampers = async (roomId) => {
         setManageCampersRoomId(roomId);

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
+import { showSuccess, showError, showToast } from '@/utils/swalHelper';
 
 export default function GuestsMeals({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -43,28 +44,34 @@ export default function GuestsMeals({ auth }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
         axios.post("/api/guests", {
             ...form,
             camp_id: selectedCampId,
             day_id: selectedDayId,
-        },{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then((res) => {
-            setGuests((prev) => [...prev, res.data]);
-            setForm({
-                first_name: "",
-                last_name: "",
-                church: "",
-                gender: "male",
-                payment_method: "",
-                usd_amount: "",
-                reference: "",
+        })
+            .then((res) => {
+                setGuests((prev) => [...prev, res.data]);
+                setForm({
+                    first_name: "",
+                    last_name: "",
+                    church: "",
+                    gender: "male",
+                    payment_method: "",
+                    usd_amount: "",
+                    reference: "",
+                });
+                setShowModal(false);
+                showSuccess("Invitado registrado correctamente");
+            })
+            .catch((err) => {
+                showError(
+                    "Error al registrar invitado",
+                    err?.response?.data?.message || "Intenta nuevamente."
+                );
             });
-            setShowModal(false);
-        });
     };
+
 
     const toggleGuestMeal = (guestId) => {
         axios.post("/api/guest-meal-records/toggle", {

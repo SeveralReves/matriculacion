@@ -3,6 +3,7 @@ import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
+import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
 
 export default function Campers({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -54,17 +55,18 @@ export default function Campers({ auth }) {
         const method = isEditing ? "put" : "post";
         const url = isEditing ? `/api/campers/${editId}` : "/api/campers";
 
-        axios[method](url, { ...form, camp_id: parseInt(selectedCampId) },{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
+        axios[method](url, { ...form, camp_id: parseInt(selectedCampId) })
             .then((res) => {
                 if (isEditing) {
-                    setCampers((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
+                    setCampers((prev) =>
+                        prev.map((c) => (c.id === editId ? res.data : c))
+                    );
+                    showSuccess("Acampante actualizado correctamente");
                 } else {
                     setCampers((prev) => [...prev, res.data]);
+                    showSuccess("Acampante creado correctamente");
                 }
+
                 setShowModal(false);
                 setForm({
                     camp_id: null,
@@ -92,9 +94,15 @@ export default function Campers({ auth }) {
             .catch((err) => {
                 if (err.response?.status === 422) {
                     setErrors(err.response.data.errors || {});
+                } else {
+                    showError(
+                        "Error al guardar",
+                        err.response?.data?.message || "Intenta de nuevo."
+                    );
                 }
             });
     };
+
 
     const handleEdit = (camper) => {
         setForm({
@@ -122,16 +130,27 @@ export default function Campers({ auth }) {
         setErrors({});
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("¿Seguro que quieres eliminar este acampante?")) return;
-        axios.delete(`/api/campers/${id}`,{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then(() => {
+    const handleDelete = async (id) => {
+        const result = await showConfirm(
+            "¿Eliminar acampante?",
+            "Esta acción no se puede deshacer.",
+            "Sí, eliminar"
+        );
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await axios.delete(`/api/campers/${id}`);
             setCampers((prev) => prev.filter((c) => c.id !== id));
-        });
+            showSuccess("Acampante eliminado correctamente");
+        } catch (error) {
+            showError(
+                "Error al eliminar",
+                error?.response?.data?.message || "Intenta de nuevo."
+            );
+        }
     };
+
 
     const columns = [
         { key: "first_name", label: "Nombre" },

@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import { FaTrash, FaEdit } from "react-icons/fa";
+import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
 
 export default function Users({ auth }) {
     const [users, setUsers] = useState([]);
@@ -24,27 +25,36 @@ export default function Users({ auth }) {
         axios.get("/api/users").then((res) => setUsers(res.data));
     }, []);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
         const method = isEditing ? "put" : "post";
         const url = isEditing ? `/api/users/${editId}` : "/api/users";
 
-        axios[method](url, form,{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then((res) => {
+        try {
+            const res = await axios[method](url, form);
+
             if (isEditing) {
                 setUsers((prev) => prev.map((u) => (u.id === editId ? res.data : u)));
+                showSuccess("Usuario actualizado");
             } else {
                 setUsers((prev) => [...prev, res.data]);
+                showSuccess("Usuario creado");
             }
+
             setShowModal(false);
             setForm({ name: "", email: "", password: "", role: "admin", camp_ids: [] });
             setIsEditing(false);
             setEditId(null);
-        });
+        } catch (error) {
+            showError(
+                "Error al guardar usuario",
+                error?.response?.data?.message || "Intenta de nuevo."
+            );
+            console.error(error);
+        }
     };
+
 
     const handleEdit = (user) => {
         setForm({
@@ -59,16 +69,28 @@ export default function Users({ auth }) {
         setShowModal(true);
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
-        axios.delete(`/api/users/${id}`,{
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then(() => {
+   const handleDelete = async (id) => {
+        const result = await showConfirm(
+            "¿Eliminar usuario?",
+            "Esta acción no se puede deshacer",
+            "Sí, eliminar"
+        );
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await axios.delete(`/api/users/${id}`);
             setUsers((prev) => prev.filter((u) => u.id !== id));
-        });
+            showSuccess("Usuario eliminado");
+        } catch (error) {
+            showError(
+                "Error al eliminar",
+                error?.response?.data?.message || "Intenta de nuevo."
+            );
+            console.error(error);
+        }
     };
+
 
     const columns = [
         { key: "name", label: "Nombre" },
