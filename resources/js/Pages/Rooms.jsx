@@ -147,18 +147,28 @@ export default function Rooms({ auth }) {
     };
 
 
-    const handleSaveRoomCampers = () => {
-        axios.post(`/api/rooms/${manageCampersRoomId}/assign-campers`, {
-            camper_ids: roomCampers
-        }).then(() => {
-            // Cierra modal y limpia
+    const handleSaveRoomCampers = async () => {
+        try {
+            await axios.post(`/api/rooms/${manageCampersRoomId}/assign-campers`, {
+                camper_ids: roomCampers
+            });
+
+            // ✅ Notifica éxito
+            showSuccess("Acampantes asignados", "Se guardaron los acampantes en la habitación");
+
+            // Limpia y cierra modal
             setShowManageModal(false);
             setManageCampersRoomId(null);
             setRoomCampers([]);
 
             // 🔄 Actualiza las habitaciones
-            axios.get(`/api/camps/${selectedCampId}/rooms`).then(res => setRooms(res.data));
-        });
+            const res = await axios.get(`/api/camps/${selectedCampId}/rooms`);
+            setRooms(res.data);
+
+        } catch (error) {
+            // ❌ Notifica error
+            showError("Error al guardar", error?.response?.data?.message || "Intenta de nuevo");
+        }
     };
 
     const translateGender = (gender) => {
