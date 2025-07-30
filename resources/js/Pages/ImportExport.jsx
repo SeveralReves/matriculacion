@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
+import { showSuccess, showError, showToast } from "@/utils/swalHelper";
 
 export default function ImportExport({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -10,12 +11,16 @@ export default function ImportExport({ auth }) {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        axios.get("/api/camps").then((res) => setCamps(res.data));
+        axios.get("/api/camps")
+            .then((res) => setCamps(res.data))
+            .catch(() => showError("Error al cargar campamentos"));
     }, []);
 
     const handleFileUpload = async () => {
         const file = fileInputRef.current?.files?.[0];
-        if (!file || !selectedCampId) return alert("Selecciona un archivo y un campamento");
+        if (!file || !selectedCampId) {
+            return showError("Datos incompletos", "Debes seleccionar un archivo y un campamento.");
+        }
 
         const formData = new FormData();
         formData.append("file", file);
@@ -26,28 +31,35 @@ export default function ImportExport({ auth }) {
             await axios.post(`/api/camps/${selectedCampId}/campers/import`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            alert("Importación completada correctamente");
+
+            showSuccess("¡Importación completada!");
         } catch (err) {
-            alert("Error al importar. Verifica el archivo.");
+            showError("Error al importar", "Verifica que el archivo sea válido.");
         } finally {
             setImporting(false);
         }
     };
 
     const handleExport = async () => {
-        if (!selectedCampId) return alert("Selecciona un campamento");
+        if (!selectedCampId) {
+            return showError("Campamento no seleccionado", "Selecciona un campamento para exportar.");
+        }
+
         try {
             const response = await axios.get(`/api/camps/${selectedCampId}/campers/export`, {
                 responseType: "blob",
             });
+
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
             link.setAttribute("download", `campamento-${selectedCampId}-acampantes.xlsx`);
             document.body.appendChild(link);
             link.click();
+
+            showToast("success", "Archivo exportado");
         } catch (err) {
-            alert("Error al exportar acampantes");
+            showError("Error al exportar", "No se pudo generar el archivo.");
         }
     };
 

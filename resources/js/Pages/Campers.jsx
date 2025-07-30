@@ -20,7 +20,9 @@ export default function Campers({ auth }) {
         last_name: "",
         church: "",
         birth_date: "",
+        age: "", //
         email: "",
+        phone: "",
         zone: "",
         color: "",
         baptized: false,
@@ -112,7 +114,9 @@ export default function Campers({ auth }) {
             last_name: camper.last_name,
             church: camper.church,
             birth_date: camper.birth_date,
+            age: camper.age || "",
             email: camper.email,
+            phone: camper.phone || "",
             zone: camper.zone,
             color: camper.color,
             baptized: camper.baptized,
@@ -213,6 +217,15 @@ export default function Campers({ auth }) {
                                     <input type="text" placeholder="Cédula (opcional)" value={form.identity_card} onChange={e => setForm({ ...form, identity_card: e.target.value })} className="border rounded p-2" />
                                     <input type="email" placeholder="Correo" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={`border rounded p-2 ${errors.email ? 'border-red-500' : ''}`} title={errors.email?.[0] || ""} />
                                     <input
+                                        type="text"
+                                        placeholder="Teléfono"
+                                        value={form.phone}
+                                        onChange={e => setForm({ ...form, phone: e.target.value })}
+                                        className={`border rounded p-2 ${errors.phone ? 'border-red-500' : ''}`}
+                                        title={errors.phone?.[0] || ""}
+                                    />
+
+                                    <input
                                         list="churches"
                                         type="text"
                                         placeholder="Iglesia"
@@ -227,7 +240,23 @@ export default function Campers({ auth }) {
                                         ))}
                                     </datalist>
 
-                                    <input type="date" placeholder="Nacimiento" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} className={`border rounded p-2 ${errors.birth_date ? 'border-red-500' : ''}`} title={errors.birth_date?.[0] || ""} />
+                                    <input type="date" placeholder="Nacimiento" value={form.birth_date} onChange={e => {
+                                        const birth_date = e.target.value;
+                                        const today = new Date();
+                                        const birth = new Date(birth_date);
+                                        const age = birth_date ? today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0) : '';
+                                        setForm({ ...form, birth_date, age });
+                                    }} className={`border rounded p-2 ${errors.birth_date ? 'border-red-500' : ''}`} title={errors.birth_date?.[0] || ""}  />
+                                    
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="Edad"
+                                        value={form.age}
+                                        onChange={(e) => setForm({ ...form, age: e.target.value })}
+                                        className={`border rounded p-2 ${errors.age ? 'border-red-500' : ''}`}
+                                        title={errors.age?.[0] || ""}
+                                    />
 
                                     <input
                                         list="zones"
