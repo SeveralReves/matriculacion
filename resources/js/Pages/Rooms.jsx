@@ -124,7 +124,7 @@ export default function Rooms({ auth }) {
     const handleManageCampers = async (roomId) => {
         setManageCampersRoomId(roomId);
         setShowManageModal(true);
-
+        setCampers([])
         const room = rooms.find(r => r.id === roomId);
 
         // 1. Obtiene acampantes asignados a esta habitación
@@ -165,6 +165,7 @@ export default function Rooms({ auth }) {
         const dictionary = {
             female: 'Femenino',
             male: 'Masculino',
+            other: 'Masculino',
         }
         return dictionary[gender]
     };
