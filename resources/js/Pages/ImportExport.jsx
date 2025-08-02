@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { showSuccess, showError, showToast } from "@/utils/swalHelper";
+import { fetchWithAuth } from "@/utils/axiosInstance";
+import axios from "axios";
 
 export default function ImportExport({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -11,7 +12,7 @@ export default function ImportExport({ auth }) {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        axios.get("/api/camps")
+        fetchWithAuth("get", "/api/camps")
             .then((res) => setCamps(res.data))
             .catch(() => showError("Error al cargar campamentos"));
     }, []);
@@ -28,10 +29,7 @@ export default function ImportExport({ auth }) {
 
         setImporting(true);
         try {
-            await axios.post(`/api/camps/${selectedCampId}/campers/import`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
+            await fetchWithAuth("post", `/api/camps/${selectedCampId}/campers/import`, formData);
             showSuccess("¡Importación completada!");
         } catch (err) {
             showError("Error al importar", "Verifica que el archivo sea válido.");
@@ -46,8 +44,22 @@ export default function ImportExport({ auth }) {
         }
 
         try {
+            // ⚠️ Aquí usamos axios directo por ser una descarga binaria (fetchWithAuth no maneja bien blobs y headers juntos)
+            await axios.get("/sanctum/csrf-cookie"); // asegura el token CSRF
+            const token = decodeURIComponent(
+                document.cookie
+                    .split("; ")
+                    .find(row => row.startsWith("XSRF-TOKEN"))
+                    ?.split("=")[1] || ""
+            );
+
             const response = await axios.get(`/api/camps/${selectedCampId}/campers/export`, {
                 responseType: "blob",
+                headers: {
+                    "X-XSRF-TOKEN": token,
+                    "X-Requested-With": "XMLHttpRequest",
+                    withCredentials: true,
+                },
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));

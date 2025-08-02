@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
+import { fetchWithAuth } from "@/utils/axiosInstance"; // ✅ Agregado
 
 export default function Users({ auth }) {
     const [users, setUsers] = useState([]);
@@ -21,8 +21,8 @@ export default function Users({ auth }) {
     });
 
     useEffect(() => {
-        axios.get("/api/camps").then((res) => setCamps(res.data));
-        axios.get("/api/users").then((res) => setUsers(res.data));
+        fetchWithAuth("get", "/api/camps").then((res) => setCamps(res.data));
+        fetchWithAuth("get", "/api/users").then((res) => setUsers(res.data));
     }, []);
 
     const handleSubmit = async (e) => {
@@ -32,7 +32,7 @@ export default function Users({ auth }) {
         const url = isEditing ? `/api/users/${editId}` : "/api/users";
 
         try {
-            const res = await axios[method](url, form);
+            const res = await fetchWithAuth(method, url, form);
 
             if (isEditing) {
                 setUsers((prev) => prev.map((u) => (u.id === editId ? res.data : u)));
@@ -55,21 +55,20 @@ export default function Users({ auth }) {
         }
     };
 
-
     const handleEdit = (user) => {
         setForm({
             name: user.name,
             email: user.email,
             password: "",
             role: user.role,
-            camp_ids: user.camps?.map(c => c.id) || [],
+            camp_ids: user.camps?.map((c) => c.id) || [],
         });
         setIsEditing(true);
         setEditId(user.id);
         setShowModal(true);
     };
 
-   const handleDelete = async (id) => {
+    const handleDelete = async (id) => {
         const result = await showConfirm(
             "¿Eliminar usuario?",
             "Esta acción no se puede deshacer",
@@ -79,7 +78,7 @@ export default function Users({ auth }) {
         if (!result.isConfirmed) return;
 
         try {
-            await axios.delete(`/api/users/${id}`);
+            await fetchWithAuth("delete", `/api/users/${id}`);
             setUsers((prev) => prev.filter((u) => u.id !== id));
             showSuccess("Usuario eliminado");
         } catch (error) {
@@ -90,7 +89,6 @@ export default function Users({ auth }) {
             console.error(error);
         }
     };
-
 
     const columns = [
         { key: "name", label: "Nombre" },

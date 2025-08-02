@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { fetchWithAuth } from "@/utils/axiosInstance";
 import DataTable from "@/Components/DataTable";
-import { showSuccess, showError, showConfirm, showToast } from '@/utils/swalHelper';
+import { showSuccess, showError, showConfirm } from '@/utils/swalHelper';
 
 export default function Camps({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -41,16 +40,9 @@ export default function Camps({ auth }) {
         if (isEditing) formData.append("_method", "PUT");
 
         try {
-            await axios.post(url, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            await fetchWithAuth("post", url, formData); // ✅ CSRF seguro
 
-            showSuccess(
-                isEditing ? 'Campamento actualizado' : 'Campamento creado'
-            );
-
+            showSuccess(isEditing ? 'Campamento actualizado' : 'Campamento creado');
             fetchWithAuth("get", "/api/camps").then((res) => setCamps(res.data));
 
             setForm({ name: "", start_date: "", end_date: "" });
@@ -67,7 +59,6 @@ export default function Camps({ auth }) {
             console.error(error);
         }
     };
-
 
     const handleEdit = (camp) => {
         setForm({
@@ -91,7 +82,7 @@ export default function Camps({ auth }) {
         if (!result.isConfirmed) return;
 
         try {
-            await axios.delete(`/api/camps/${id}`);
+            await fetchWithAuth("delete", `/api/camps/${id}`); // ✅ CSRF seguro
             setCamps((prev) => prev.filter((c) => c.id !== id));
             showSuccess('Eliminado correctamente');
         } catch (error) {
@@ -102,7 +93,6 @@ export default function Camps({ auth }) {
             console.error(error);
         }
     };
-
 
     return (
         <AuthenticatedLayout
@@ -131,6 +121,7 @@ export default function Camps({ auth }) {
                         Crear campamento
                     </button>
                 </div>
+
                 <DataTable
                     columns={columns}
                     data={camps}
@@ -142,9 +133,7 @@ export default function Camps({ auth }) {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
                             <h2 className="text-lg font-bold mb-4">
-                                {isEditing
-                                    ? "Editar campamento"
-                                    : "Crear nuevo campamento"}
+                                {isEditing ? "Editar campamento" : "Crear nuevo campamento"}
                             </h2>
                             <form
                                 onSubmit={handleSubmit}
@@ -156,10 +145,7 @@ export default function Camps({ auth }) {
                                     placeholder="Nombre"
                                     value={form.name}
                                     onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            name: e.target.value,
-                                        })
+                                        setForm({ ...form, name: e.target.value })
                                     }
                                     className="w-full border rounded p-2"
                                     required
@@ -168,10 +154,7 @@ export default function Camps({ auth }) {
                                     type="date"
                                     value={form.start_date}
                                     onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            start_date: e.target.value,
-                                        })
+                                        setForm({ ...form, start_date: e.target.value })
                                     }
                                     className="w-full border rounded p-2"
                                     required
@@ -180,10 +163,7 @@ export default function Camps({ auth }) {
                                     type="date"
                                     value={form.end_date}
                                     onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            end_date: e.target.value,
-                                        })
+                                        setForm({ ...form, end_date: e.target.value })
                                     }
                                     className="w-full border rounded p-2"
                                 />
@@ -193,9 +173,7 @@ export default function Camps({ auth }) {
                                     onChange={(e) => {
                                         const file = e.target.files[0];
                                         setImageFile(file);
-                                        setImagePreview(
-                                            URL.createObjectURL(file)
-                                        );
+                                        setImagePreview(URL.createObjectURL(file));
                                     }}
                                 />
                                 {imagePreview && (

@@ -122,7 +122,7 @@ export default function Campers({ auth }) {
         if (!result.isConfirmed) return;
 
         try {
-            await axios.delete(`/api/campers/${id}`);
+            await fetchWithAuth("delete", `/api/campers/${id}`);
             setCampers((prev) => prev.filter((c) => c.id !== id));
             showSuccess("Acampante eliminado correctamente");
         } catch (error) {

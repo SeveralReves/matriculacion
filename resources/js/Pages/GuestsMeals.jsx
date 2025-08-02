@@ -1,11 +1,10 @@
 // Este archivo define el módulo de gestión de invitados para el sistema de comidas.
 // Se debe agregar soporte backend (modelo, migración, controlador) para Guest y su MealRecord asociado.
-
 import { useEffect, useState } from "react";
-import axios from "axios";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import { showSuccess, showError, showToast } from '@/utils/swalHelper';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { showSuccess, showError } from '@/utils/swalHelper';
+import { fetchWithAuth } from "@/utils/axiosInstance"; // ✅ agregado
 
 export default function GuestsMeals({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -24,72 +23,71 @@ export default function GuestsMeals({ auth }) {
         reference: "",
     });
 
-    useEffect(() => {
-        axios.get("/api/camps").then((res) => setCamps(res.data));
+   useEffect(() => {
+        fetchWithAuth("get", "/api/camps").then((res) => setCamps(res.data));
     }, []);
 
     useEffect(() => {
         if (selectedCampId) {
-            axios.get(`/api/camps/${selectedCampId}/days`).then((res) => setDays(res.data));
+            fetchWithAuth("get", `/api/camps/${selectedCampId}/days`).then((res) => setDays(res.data));
         }
     }, [selectedCampId]);
 
     useEffect(() => {
         if (selectedCampId && selectedDayId) {
-            axios.get(`/api/guests`, {
-                params: { camp_id: selectedCampId, day_id: selectedDayId },
+            fetchWithAuth("get", "/api/guests", {
+                camp_id: selectedCampId,
+                day_id: selectedDayId
             }).then((res) => setGuests(res.data));
         }
     }, [selectedCampId, selectedDayId]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        axios.post("/api/guests", {
-            ...form,
-            camp_id: selectedCampId,
-            day_id: selectedDayId,
-        })
-            .then((res) => {
-                setGuests((prev) => [...prev, res.data]);
-                setForm({
-                    first_name: "",
-                    last_name: "",
-                    church: "",
-                    gender: "male",
-                    payment_method: "",
-                    usd_amount: "",
-                    reference: "",
-                });
-                setShowModal(false);
-                showSuccess("Invitado registrado correctamente");
-            })
-            .catch((err) => {
-                showError(
-                    "Error al registrar invitado",
-                    err?.response?.data?.message || "Intenta nuevamente."
-                );
+        try {
+            const res = await fetchWithAuth("post", "/api/guests", {
+                ...form,
+                camp_id: selectedCampId,
+                day_id: selectedDayId,
             });
+
+            setGuests((prev) => [...prev, res.data]);
+            setForm({
+                first_name: "",
+                last_name: "",
+                church: "",
+                gender: "male",
+                payment_method: "",
+                usd_amount: "",
+                reference: "",
+            });
+            setShowModal(false);
+            showSuccess("Invitado registrado correctamente");
+        } catch (err) {
+            showError(
+                "Error al registrar invitado",
+                err?.response?.data?.message || "Intenta nuevamente."
+            );
+        }
     };
 
+    const toggleGuestMeal = async (guestId) => {
+        try {
+            await fetchWithAuth("post", "/api/guest-meal-records/toggle", {
+                guest_id: guestId,
+                day_id: selectedDayId,
+            });
 
-    const toggleGuestMeal = (guestId) => {
-        axios.post("/api/guest-meal-records/toggle", {
-            guest_id: guestId,
-            day_id: selectedDayId,
-        }, {
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        }).then(() => {
             setGuests((prev) =>
                 prev.map((g) =>
                     g.id === guestId ? { ...g, has_eaten: !g.has_eaten } : g
                 )
             );
-        });
+        } catch (err) {
+            showError("Error al actualizar registro de comida");
+        }
     };
-
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title="Invitados - Comidas" />

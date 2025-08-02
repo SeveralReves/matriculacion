@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { showSuccess, showError, showToast } from '@/utils/swalHelper';
+import { fetchWithAuth } from "@/utils/axiosInstance";
 
 export default function Meals({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -13,26 +13,38 @@ export default function Meals({ auth }) {
     const [query, setQuery] = useState("");
 
     useEffect(() => {
-        axios.get("/api/camps").then((res) => setCamps(res.data));
+        fetchWithAuth("get", "/api/camps")
+            .then((res) => setCamps(res.data))
+            .catch(() => showError("Error al cargar campamentos"));
     }, []);
 
     useEffect(() => {
+        setSelectedDayId(null)
+        setRecords([])
         if (selectedCampId) {
-            axios.get(`/api/camps/${selectedCampId}/days`).then((res) => setDays(res.data));
+            fetchWithAuth("get", `/api/camps/${selectedCampId}/days`)
+                .then((res) => setDays(res.data))
+                .catch(() => showError("Error al cargar días"));
         }
     }, [selectedCampId]);
 
     useEffect(() => {
         if (selectedCampId && selectedDayId) {
-            axios.get(`/api/meal-records`, {
-                params: { camp_id: selectedCampId, day_id: selectedDayId },
-            }).then((res) => setRecords(res.data));
+            const params = new URLSearchParams({
+                camp_id: selectedCampId,
+                day_id: selectedDayId
+            }).toString();
+
+            fetchWithAuth("get", `/api/meal-records?${params}`)
+                .then((res) => setRecords(res.data))
+                .catch(() => showError("Error al cargar registros"));
+
         }
-    }, [selectedCampId, selectedDayId]);
+    }, [selectedDayId]);
 
     const toggleMeal = async (camperId) => {
         try {
-            await axios.post("/api/meal-records/toggle", {
+            await fetchWithAuth("post", "/api/meal-records/toggle", {
                 camp_id: selectedCampId,
                 day_id: selectedDayId,
                 camper_id: camperId,
@@ -52,7 +64,6 @@ export default function Meals({ auth }) {
             );
         }
     };
-
 
     const filtered = records.filter((r) => {
         const text = `${r.camper.first_name} ${r.camper.last_name} ${r.camper.email} ${r.camper.serial}`.toLowerCase();

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import { showSuccess, showError, showConfirm } from '@/utils/swalHelper';
+import { fetchWithAuth } from "@/utils/axiosInstance";
 
 export default function Rooms({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -39,8 +39,8 @@ export default function Rooms({ auth }) {
         description: room.description || '',
     }));
 
-    useEffect(() => {
-        axios.get("/api/camps").then(res => {
+     useEffect(() => {
+        fetchWithAuth("get", "/api/camps").then(res => {
             setCamps(res.data);
             if (res.data.length > 0) setSelectedCampId(res.data[0].id);
         });
@@ -48,7 +48,7 @@ export default function Rooms({ auth }) {
 
     useEffect(() => {
         if (selectedCampId) {
-            axios.get(`/api/camps/${selectedCampId}/rooms`).then(res => setRooms(res.data));
+            fetchWithAuth("get", `/api/camps/${selectedCampId}/rooms`).then(res => setRooms(res.data));
         }
     }, [selectedCampId]);
 
@@ -63,7 +63,7 @@ export default function Rooms({ auth }) {
         const payload = { ...form };
 
         try {
-            const res = await axios[method](url, payload);
+            const res = await fetchWithAuth(method, url, payload);
 
             if (isEditing) {
                 setRooms((prev) =>
@@ -87,7 +87,6 @@ export default function Rooms({ auth }) {
         }
     };
 
-
     const handleEdit = (room) => {
         setForm({
             name: room.name,
@@ -100,7 +99,7 @@ export default function Rooms({ auth }) {
         setShowModal(true);
     };
 
-   const handleDelete = async (id) => {
+    const handleDelete = async (id) => {
         const result = await showConfirm(
             "¿Eliminar habitación?",
             "Esta acción no se puede deshacer.",
@@ -109,7 +108,7 @@ export default function Rooms({ auth }) {
         if (!result.isConfirmed) return;
 
         try {
-            await axios.delete(`/api/rooms/${id}`);
+            await fetchWithAuth("delete", `/api/rooms/${id}`);
             setRooms((prev) => prev.filter((r) => r.id !== id));
             showSuccess("Habitación eliminada");
         } catch (error) {
@@ -120,53 +119,45 @@ export default function Rooms({ auth }) {
         }
     };
 
-    
     const handleManageCampers = async (roomId) => {
         setManageCampersRoomId(roomId);
         setShowManageModal(true);
-        setCampers([])
+        setCampers([]);
         const room = rooms.find(r => r.id === roomId);
 
-        // 1. Obtiene acampantes asignados a esta habitación
-        const assignedRes = await axios.get(`/api/rooms/${roomId}/campers`);
-        const assignedIds = assignedRes.data.map(c => c.id);
-        setRoomCampers(assignedIds);
+        try {
+            const assignedRes = await fetchWithAuth("get", `/api/rooms/${roomId}/campers`);
+            const assignedIds = assignedRes.data.map(c => c.id);
+            setRoomCampers(assignedIds);
 
-        // 2. Obtiene todos los campers del campamento
-        const allCampersRes = await axios.get(`/api/camps/${selectedCampId}/campers`);
+            const allCampersRes = await fetchWithAuth("get", `/api/camps/${selectedCampId}/campers`);
+            const filtered = allCampersRes.data.filter(camper => {
+                const notAssignedElsewhere = camper.room_id === null || assignedIds.includes(camper.id);
+                const genderMatch =
+                    room.gender === "ambos" || translateGender(camper.gender).toLowerCase() === room.gender;
+                return notAssignedElsewhere && genderMatch;
+            });
 
-        // 3. Filtra por género (o muestra todos si el cuarto es "ambos")
-        const filtered = allCampersRes.data.filter(camper => {
-            const notAssignedElsewhere = camper.room_id === null || assignedIds.includes(camper.id);
-            const genderMatch =
-                room.gender === "ambos" || translateGender(camper.gender).toLowerCase() === room.gender;
-            return notAssignedElsewhere && genderMatch;
-        });
-
-        setCampers(filtered);
+            setCampers(filtered);
+        } catch (error) {
+            showError("Error al cargar acampantes");
+        }
     };
-
 
     const handleSaveRoomCampers = async () => {
         try {
-            await axios.post(`/api/rooms/${manageCampersRoomId}/assign-campers`, {
+            await fetchWithAuth("post", `/api/rooms/${manageCampersRoomId}/assign-campers`, {
                 camper_ids: roomCampers
             });
 
-            // ✅ Notifica éxito
             showSuccess("Acampantes asignados", "Se guardaron los acampantes en la habitación");
-
-            // Limpia y cierra modal
             setShowManageModal(false);
             setManageCampersRoomId(null);
             setRoomCampers([]);
 
-            // 🔄 Actualiza las habitaciones
-            const res = await axios.get(`/api/camps/${selectedCampId}/rooms`);
+            const res = await fetchWithAuth("get", `/api/camps/${selectedCampId}/rooms`);
             setRooms(res.data);
-
         } catch (error) {
-            // ❌ Notifica error
             showError("Error al guardar", error?.response?.data?.message || "Intenta de nuevo");
         }
     };
@@ -177,7 +168,7 @@ export default function Rooms({ auth }) {
             male: 'Masculino',
             other: 'Masculino',
         }
-        return dictionary[gender]
+        return dictionary[gender];
     };
 
     return (
