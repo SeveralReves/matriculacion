@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
+import { fetchWithAuth } from "@/utils/axiosInstance"; 
 
 export default function Campers({ auth }) {
     const [camps, setCamps] = useState([]);
@@ -52,57 +53,34 @@ export default function Campers({ auth }) {
         }
     }, [selectedCampId]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const method = isEditing ? "put" : "post";
         const url = isEditing ? `/api/campers/${editId}` : "/api/campers";
 
-        axios[method](url, { ...form, camp_id: parseInt(selectedCampId) })
-            .then((res) => {
-                if (isEditing) {
-                    setCampers((prev) =>
-                        prev.map((c) => (c.id === editId ? res.data : c))
-                    );
-                    showSuccess("Acampante actualizado correctamente");
-                } else {
-                    setCampers((prev) => [...prev, res.data]);
-                    showSuccess("Acampante creado correctamente");
-                }
+        try {
+            const res = await fetchWithAuth(method, url, { ...form, camp_id: parseInt(selectedCampId) });
 
-                setShowModal(false);
-                setForm({
-                    camp_id: null,
-                    identity_card: "",
-                    first_name: "",
-                    last_name: "",
-                    church: "",
-                    birth_date: "",
-                    email: "",
-                    zone: "",
-                    color: "",
-                    baptized: false,
-                    gender: "male",
-                    serial: "",
-                    payment_method: "",
-                    usd_amount: "",
-                    reference: "",
-                    comments: "",
-                    room_id: null,
-                });
-                setIsEditing(false);
-                setEditId(null);
-                setErrors({});
-            })
-            .catch((err) => {
-                if (err.response?.status === 422) {
-                    setErrors(err.response.data.errors || {});
-                } else {
-                    showError(
-                        "Error al guardar",
-                        err.response?.data?.message || "Intenta de nuevo."
-                    );
-                }
-            });
+            if (isEditing) {
+                setCampers((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
+                showSuccess("Acampante actualizado correctamente");
+            } else {
+                setCampers((prev) => [...prev, res.data]);
+                showSuccess("Acampante creado correctamente");
+            }
+
+            setShowModal(false);
+            setForm({ ...form, ...camposIniciales });
+            setIsEditing(false);
+            setEditId(null);
+            setErrors({});
+        } catch (err) {
+            if (err.response?.status === 422) {
+                setErrors(err.response.data.errors || {});
+            } else {
+                showError("Error al guardar", err.response?.data?.message || "Intenta de nuevo.");
+            }
+        }
     };
 
 
