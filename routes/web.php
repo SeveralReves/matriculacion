@@ -46,9 +46,29 @@ use Illuminate\Http\Request;
 //     );
 // });
 
+
+Route::get('/artisan-reset', function () {
+    // Protege con una clave secreta
+    if (request('secret') !== 'admin123456') {
+        abort(403, 'No autorizado');
+    }
+
+    try {
+        // 1. Elimina todas las tablas y corre migraciones
+        Artisan::call('migrate:fresh', [
+            '--force' => true,
+            '--seed' => true,
+        ]);
+
+        return 'Base de datos reseteada y seeders ejecutados exitosamente.';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
+
 Route::get('/clear-artisan', function () {
     // Protección simple (idealmente reemplazar por auth real)
-    if (request('secret') !== 'tusecretopersonalseguro') {
+    if (request('secret') !== 'admin123456') {
         abort(403, 'No autorizado');
     }
 
