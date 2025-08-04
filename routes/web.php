@@ -15,6 +15,8 @@ use App\Http\Controllers\{
     RoomController,
     GuestMealRecordController
 };
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +28,37 @@ use App\Http\Controllers\{
 | contains the "web" middleware group. Now create something great!
 |
 */
+// Route::get('/sanctum/csrf-cookie', function (Request $request) {
+//     $token = $request->session()->token();
+
+//     return response()->noContent()->withCookie(
+//         cookie(
+//             'XSRF-TOKEN',
+//             $token,
+//             120, // duración en minutos
+//             '/',
+//             config('session.domain'),
+//             true,  // Secure (porque estás en HTTPS)
+//             false, // HttpOnly = false ✅
+//             false, // raw = false
+//             'Lax'  // SameSite
+//         )
+//     );
+// });
+
+Route::get('/clear-artisan', function () {
+    // Protección simple (idealmente reemplazar por auth real)
+    if (request('secret') !== 'tusecretopersonalseguro') {
+        abort(403, 'No autorizado');
+    }
+
+    Artisan::call('route:clear');
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+
+    return 'Limpieza completada.';
+});
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
