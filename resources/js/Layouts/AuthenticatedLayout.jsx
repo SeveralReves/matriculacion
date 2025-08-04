@@ -22,7 +22,7 @@ export default function Authenticated({ user, header, children }) {
                                 </Link>
                             </div>
 
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div className="hidden space-x-5 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                                 Reporte
                                 </NavLink>
@@ -41,6 +41,9 @@ export default function Authenticated({ user, header, children }) {
                                 </NavLink>
                                 <NavLink href={route('campers')} active={route().current('campers')}>
                                     Acampantes
+                                </NavLink>
+                                <NavLink href={route('registered')} active={route().current('registered')}>
+                                    Matrícula
                                 </NavLink>
                                 <NavLink href={route('meals')} active={route().current('meals')}>
                                     Comidas

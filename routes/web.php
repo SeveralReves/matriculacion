@@ -9,6 +9,7 @@ use App\Http\Controllers\{
     CampController,
     DayController,
     MealRecordController,
+    RegisteredRecordController,
     UserController,
     GuestController,
     DashboardApiController,
@@ -104,6 +105,10 @@ Route::get('/comidas', function () {
     return Inertia::render('Meals');
 })->middleware(middleware: ['auth', 'verified'])->name('meals');
 
+Route::get('/matricula', function () {
+    return Inertia::render('Register');
+})->middleware(middleware: ['auth', 'verified'])->name('registered');
+
 Route::get('/dormitorios', function () {
     return Inertia::render('Rooms');
 })->middleware(middleware: ['auth', 'verified'])->name('rooms');
@@ -150,6 +155,10 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     // 🍽️ Meal Records
     Route::get('/meal-records', [MealRecordController::class, 'index']); // ?camp_id=...&day_id=...
     Route::post('/meal-records/toggle', [MealRecordController::class, 'toggle']);
+
+    // 🍽️ Registered Records
+    Route::get('/registered-records', [RegisteredRecordController::class, 'index']); // ?camp_id=...
+    Route::post('/registered-records/toggle', [RegisteredRecordController::class, 'toggle']);
 
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
