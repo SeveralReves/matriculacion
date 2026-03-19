@@ -7,7 +7,7 @@ import { fetchWithAuth } from "@/utils/axiosInstance";
 
 export default function Rooms({ auth }) {
     const [camps, setCamps] = useState([]);
-    const [selectedCampId, setSelectedCampId] = useState(null);
+    const [selectedCampId, setSelectedCampId] = useState("");
     const [rooms, setRooms] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -22,27 +22,36 @@ export default function Rooms({ auth }) {
     const [campers, setCampers] = useState([]);
     const [roomCampers, setRoomCampers] = useState([]);
     const [showManageModal, setShowManageModal] = useState(false);
+    const [loadingCampers, setLoadingCampers] = useState(false);
 
+    // Mapeo de géneros para visualización y lógica
+    const genderLabels = {
+        male: 'Masculino',
+        female: 'Femenino',
+        other: 'Masculino', // Opcional: manejar según tu lógica
+        masculino: 'Masculino',
+        femenino: 'Femenino',
+        ambos: 'Ambos'
+    };
 
     const columns = [
         { key: "name", label: "Nombre" },
-        { key: "capacity", label: "Capacidad" },
-        { key: "gender", label: "Género" },
+        { key: "display_capacity", label: "Capacidad (Ocupados/Max)" },
+        { key: "display_gender", label: "Género" },
         { key: "description", label: "Descripción" }
     ];
 
+    // Transformamos los datos para la tabla pero MANTENEMOS los originales para el Edit
     const transformedRooms = rooms.map(room => ({
-        id: room.id,
-        name: room.name,
-        capacity: `${room?.campers_count || 0}/${room.max_capacity || '---'}`,
-        gender: room.gender.charAt(0).toUpperCase() + room.gender.slice(1),
-        description: room.description || '',
+        ...room, // <--- IMPORTANTE: Mantiene max_capacity, gender original, etc.
+        display_capacity: `${room?.campers_count || 0} / ${room.max_capacity || '∞'}`,
+        display_gender: genderLabels[room.gender] || room.gender,
     }));
 
-     useEffect(() => {
+    useEffect(() => {
         fetchWithAuth("get", "/api/camps").then(res => {
             setCamps(res.data);
-            if (res.data.length > 0) setSelectedCampId(res.data[0].id);
+            if (res.data.length > 0) setSelectedCampId(res.data[0].id.toString());
         });
     }, []);
 
@@ -52,42 +61,35 @@ export default function Rooms({ auth }) {
         }
     }, [selectedCampId]);
 
+    const resetForm = () => {
+        setForm({ name: "", max_capacity: "", gender: "ambos", description: "" });
+        setIsEditing(false);
+        setEditId(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedCampId) return;
-
         const method = isEditing ? "put" : "post";
-        const url = isEditing
-            ? `/api/rooms/${editId}`
-            : `/api/camps/${selectedCampId}/rooms`;
-        const payload = { ...form };
+        const url = isEditing ? `/api/rooms/${editId}` : `/api/camps/${selectedCampId}/rooms`;
 
         try {
-            const res = await fetchWithAuth(method, url, payload);
-
+            const res = await fetchWithAuth(method, url, form);
             if (isEditing) {
-                setRooms((prev) =>
-                    prev.map((r) => (r.id === editId ? res.data : r))
-                );
+                setRooms(prev => prev.map(r => r.id === editId ? res.data : r));
                 showSuccess("Habitación actualizada");
             } else {
-                setRooms((prev) => [...prev, res.data]);
+                setRooms(prev => [...prev, res.data]);
                 showSuccess("Habitación creada");
             }
-
-            setForm({ name: "", max_capacity: "", gender: "ambos", description: "" });
-            setIsEditing(false);
-            setEditId(null);
             setShowModal(false);
+            resetForm();
         } catch (error) {
-            showError(
-                "Error al guardar",
-                error?.response?.data?.message || "Intenta de nuevo."
-            );
+            showError("Error al guardar", error?.response?.data?.message || "Intenta de nuevo.");
         }
     };
 
     const handleEdit = (room) => {
+        // 'room' aquí viene de transformedRooms, que ahora tiene las props originales
         setForm({
             name: room.name,
             max_capacity: room.max_capacity || "",
@@ -99,48 +101,36 @@ export default function Rooms({ auth }) {
         setShowModal(true);
     };
 
-    const handleDelete = async (id) => {
-        const result = await showConfirm(
-            "¿Eliminar habitación?",
-            "Esta acción no se puede deshacer.",
-            "Sí, eliminar"
-        );
-        if (!result.isConfirmed) return;
-
-        try {
-            await fetchWithAuth("delete", `/api/rooms/${id}`);
-            setRooms((prev) => prev.filter((r) => r.id !== id));
-            showSuccess("Habitación eliminada");
-        } catch (error) {
-            showError(
-                "Error al eliminar",
-                error?.response?.data?.message || "Intenta de nuevo."
-            );
-        }
-    };
-
     const handleManageCampers = async (roomId) => {
         setManageCampersRoomId(roomId);
         setShowManageModal(true);
-        setCampers([]);
+        setLoadingCampers(true);
+        
         const room = rooms.find(r => r.id === roomId);
 
         try {
-            const assignedRes = await fetchWithAuth("get", `/api/rooms/${roomId}/campers`);
+            const [assignedRes, allCampersRes] = await Promise.all([
+                fetchWithAuth("get", `/api/rooms/${roomId}/campers`),
+                fetchWithAuth("get", `/api/camps/${selectedCampId}/campers`)
+            ]);
+
             const assignedIds = assignedRes.data.map(c => c.id);
             setRoomCampers(assignedIds);
 
-            const allCampersRes = await fetchWithAuth("get", `/api/camps/${selectedCampId}/campers`);
             const filtered = allCampersRes.data.filter(camper => {
-                const notAssignedElsewhere = camper.room_id === null || assignedIds.includes(camper.id);
-                const genderMatch =
-                    room.gender === "ambos" || translateGender(camper.gender).toLowerCase() === room.gender;
+                const notAssignedElsewhere = !camper.room_id || assignedIds.includes(camper.id);
+                // Normalizamos géneros para comparar (male -> masculino)
+                const camperGenderNormal = camper.gender === 'male' ? 'masculino' : 'femenino';
+                const genderMatch = room.gender === "ambos" || camperGenderNormal === room.gender;
+                
                 return notAssignedElsewhere && genderMatch;
             });
 
             setCampers(filtered);
         } catch (error) {
             showError("Error al cargar acampantes");
+        } finally {
+            setLoadingCampers(false);
         }
     };
 
@@ -149,156 +139,145 @@ export default function Rooms({ auth }) {
             await fetchWithAuth("post", `/api/rooms/${manageCampersRoomId}/assign-campers`, {
                 camper_ids: roomCampers
             });
-
-            showSuccess("Acampantes asignados", "Se guardaron los acampantes en la habitación");
+            showSuccess("Asignación exitosa");
             setShowManageModal(false);
-            setManageCampersRoomId(null);
-            setRoomCampers([]);
-
+            // Refrescar para ver nuevos conteos
             const res = await fetchWithAuth("get", `/api/camps/${selectedCampId}/rooms`);
             setRooms(res.data);
         } catch (error) {
-            showError("Error al guardar", error?.response?.data?.message || "Intenta de nuevo");
+            showError("Error al guardar");
         }
-    };
-
-    const translateGender = (gender) => {
-        const dictionary = {
-            female: 'Femenino',
-            male: 'Masculino',
-            other: 'Masculino',
-        }
-        return dictionary[gender];
     };
 
     return (
         <AuthenticatedLayout user={auth.user}>
-            <Head title="Habitaciones" />
+            <Head title="Gestión de Habitaciones" />
 
-            <div className="max-w-4xl mx-auto py-8 px-4">
-                <div className="mb-6">
-                    <label className="block font-semibold mb-1">Seleccionar Campamento:</label>
+            <div className="max-w-5xl mx-auto py-8 px-4">
+                <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
+                    <label className="block font-bold text-gray-700 mb-2">Campamento Activo:</label>
                     <select
-                        className="border rounded px-3 py-2 w-full"
-                        value={selectedCampId || ""}
+                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500"
+                        value={selectedCampId}
                         onChange={e => setSelectedCampId(e.target.value)}
                     >
                         {camps.map(camp => (
-                            <option key={camp.id} value={camp.id}>
-                                {camp.name}
-                            </option>
+                            <option key={camp.id} value={camp.id}>{camp.name}</option>
                         ))}
                     </select>
                 </div>
 
-                {selectedCampId && (
-                    <>
-                        <div className="flex justify-between items-center mb-4">
-                            <h1 className="text-2xl font-bold">Habitaciones</h1>
-                            <button
-                                onClick={() => {
-                                    setForm({ name: "", max_capacity: "", gender: "ambos", description: "" });
-                                    setIsEditing(false);
-                                    setEditId(null);
-                                    setShowModal(true);
-                                }}
-                                className="bg-blue-600 text-white px-4 py-2 rounded"
-                            >
-                                Nueva habitación
-                            </button>
-                        </div>
-                        <DataTable
-                            columns={columns}
-                            data={transformedRooms}
-                            onEdit={handleEdit}
-                            onAssign={handleManageCampers}
-                            onDelete={handleDelete}
-                        />
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-extrabold text-gray-800">Habitaciones</h1>
+                    <button
+                        onClick={() => { resetForm(); setShowModal(true); }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition shadow"
+                    >
+                        + Nueva Habitación
+                    </button>
+                </div>
 
-{/* 
-                        <table className="w-full border">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="p-2">Nombre</th>
-                                    <th className="p-2">Capacidad</th>
-                                    <th className="p-2">Género</th>
-                                    <th className="p-2">Descripción</th>
-                                    <th className="p-2">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rooms.map(room => (
-                                    <tr key={room.id} className="border-t">
-                                        <td className="p-2">{room.name}</td>
-                                        <td className="p-2">{room.campers_count}/{room.max_capacity || '---'}</td>
-                                        <td className="p-2 capitalize">{room.gender}</td>
-                                        <td className="p-2">{room.description}</td>
-                                        <td className="p-2 space-x-2">
-                                            <button className="text-blue-600" onClick={() => handleEdit(room)}>Editar</button>
-                                            <button className="text-green-600" onClick={() => handleManageCampers(room.id)}>Asignar Acampantes</button>
-                                            <button className="text-red-600" onClick={() => handleDelete(room.id)}>Eliminar</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table> */}
-                    </>
-                )}
+                <div className="bg-white rounded-lg shadow border overflow-hidden">
+                    <DataTable
+                        columns={columns}
+                        data={transformedRooms}
+                        onEdit={handleEdit}
+                        onAssign={handleManageCampers}
+                        onDelete={async (id) => {
+                            const result = await showConfirm("¿Eliminar?", "No podrás deshacer esto.");
+                            if (result.isConfirmed) {
+                                try {
+                                    await fetchWithAuth("delete", `/api/rooms/${id}`);
+                                    setRooms(prev => prev.filter(r => r.id !== id));
+                                    showSuccess("Eliminado");
+                                } catch (e) { showError("Error al eliminar"); }
+                            }
+                        }}
+                    />
+                </div>
 
+                {/* Modal de Habitación */}
                 {showModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-                            <h2 className="text-lg font-bold mb-4">
-                                {isEditing ? "Editar habitación" : "Nueva habitación"}
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+                            <h2 className="text-xl font-bold mb-5 text-gray-800 border-b pb-2">
+                                {isEditing ? "Editar Habitación" : "Nueva Habitación"}
                             </h2>
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <input type="text" placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="w-full border rounded p-2" />
-                                <input type="number" placeholder="Capacidad máxima" value={form.max_capacity} onChange={e => setForm({ ...form, max_capacity: e.target.value })} className="w-full border rounded p-2" />
-                                <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="w-full border rounded p-2">
-                                    <option value="ambos">Ambos</option>
-                                    <option value="masculino">Masculino</option>
-                                    <option value="femenino">Femenino</option>
-                                </select>
-                                <textarea placeholder="Descripción" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full border rounded p-2" />
+                                <div>
+                                    <label className="text-sm font-semibold text-gray-600">Nombre</label>
+                                    <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="w-full border rounded-lg p-2 mt-1" placeholder="Ej: Cabaña A-1" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-semibold text-gray-600">Capacidad Max.</label>
+                                        <input type="number" value={form.max_capacity} onChange={e => setForm({ ...form, max_capacity: e.target.value })} className="w-full border rounded-lg p-2 mt-1" placeholder="Ej: 10" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-semibold text-gray-600">Género Admisión</label>
+                                        <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="w-full border rounded-lg p-2 mt-1">
+                                            <option value="ambos">Ambos</option>
+                                            <option value="masculino">Masculino</option>
+                                            <option value="femenino">Femenino</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-semibold text-gray-600">Descripción (Opcional)</label>
+                                    <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full border rounded-lg p-2 mt-1" rows="3" />
+                                </div>
 
-                                <div className="flex justify-end gap-4">
-                                    <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
-                                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">{isEditing ? "Actualizar" : "Guardar"}</button>
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                                    <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
+                                        {isEditing ? "Guardar Cambios" : "Crear Ahora"}
+                                    </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 )}
+
+                {/* Modal de Asignación */}
                 {showManageModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-full max-w-xl">
-                            <h2 className="text-lg font-bold mb-4">Asignar Acampantes</h2>
-                            <div className="max-h-96 overflow-y-auto">
-                                {campers.map(camper => (
-                                    <label key={camper.id} className="flex items-center space-x-2 py-1">
-                                        <input
-                                            type="checkbox"
-                                            checked={roomCampers.includes(camper.id)}
-                                            onChange={e => {
-                                                if (e.target.checked) {
-                                                    setRoomCampers(prev => [...prev, camper.id]);
-                                                } else {
-                                                    setRoomCampers(prev => prev.filter(id => id !== camper.id));
-                                                }
-                                            }}
-                                        />
-                                        <span>{camper.first_name} {camper.last_name} - ({translateGender(camper.gender)})</span>
-                                    </label>
-                                ))}
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl">
+                            <h2 className="text-xl font-bold mb-4 flex justify-between">
+                                <span>👥 Asignar Acampantes</span>
+                                {loadingCampers && <span className="text-sm font-normal text-blue-500">Cargando...</span>}
+                            </h2>
+                            <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4 bg-gray-50">
+                                {campers.length === 0 && !loadingCampers ? (
+                                    <p className="text-center text-gray-500 py-4">No hay acampantes disponibles para este género o campamento.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {campers.map(camper => (
+                                            <label key={camper.id} className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${roomCampers.includes(camper.id) ? 'bg-blue-50 border-blue-300' : 'bg-white hover:bg-gray-100'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
+                                                    checked={roomCampers.includes(camper.id)}
+                                                    onChange={e => {
+                                                        if (e.target.checked) setRoomCampers(prev => [...prev, camper.id]);
+                                                        else setRoomCampers(prev => prev.filter(id => id !== camper.id));
+                                                    }}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-gray-800">{camper.first_name} {camper.last_name}</span>
+                                                    <span className="text-xs text-gray-500 uppercase">{genderLabels[camper.gender]}</span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex justify-end mt-4 gap-4">
-                                <button onClick={() => setShowManageModal(false)} className="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
-                                <button onClick={handleSaveRoomCampers} className="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
+                            <div className="flex justify-end mt-6 gap-4">
+                                <button onClick={() => setShowManageModal(false)} className="bg-gray-200 hover:bg-gray-300 px-6 py-2 rounded-lg font-semibold text-gray-700">Cerrar</button>
+                                <button onClick={handleSaveRoomCampers} className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transition">Guardar Cambios</button>
                             </div>
                         </div>
                     </div>
                 )}
-
             </div>
         </AuthenticatedLayout>
     );
