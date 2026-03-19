@@ -243,7 +243,7 @@ export default function Rooms({ auth }) {
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl">
                             <h2 className="text-xl font-bold mb-4 flex justify-between">
-                                <span>👥 Asignar Acampantes</span>
+                                <span>Asignar Acampantes</span>
                                 {loadingCampers && <span className="text-sm font-normal text-blue-500">Cargando...</span>}
                             </h2>
                             <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4 bg-gray-50">

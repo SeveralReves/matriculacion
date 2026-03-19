@@ -27,6 +27,7 @@ class CampersImport implements ToModel, WithHeadingRow, SkipsEmptyRows
         'gender'        => ['sexo', 'genero', 'gender'],
         'age'           => ['edad', 'age'],
         'reference'     => ['referencia_del_pago', 'referencia', 'reference'],
+        'payment_method'=> ['metodo_de_pago', 'payment_method'],
         'usd_amount'    => ['monto_del_pago', 'monto', 'pago', 'amount'],
         'color'         => ['eqp', 'equipo', 'color'],
     ];
@@ -66,7 +67,7 @@ class CampersImport implements ToModel, WithHeadingRow, SkipsEmptyRows
                 'baptized'       => false,
                 'birth_date'     => $birthDate,
                 'serial'         => $serial,
-                'payment_method' => 'Importado',
+                'payment_method' => $data['payment_method'] ?? 'Importado',
                 'usd_amount'     => $this->normalizeUsdAmount($data['usd_amount'] ?? null),
                 'reference'      => $data['reference'] ?? null,
                 'comments'       => $extraComments,
@@ -113,18 +114,34 @@ class CampersImport implements ToModel, WithHeadingRow, SkipsEmptyRows
 
     private function normalizeUsdAmount($raw)
     {
-        if (empty($raw)) return null;
-        
-        $value = trim(strtolower($raw));
-        // Si contiene letras de monedas locales, ignoramos para no causar errores
-        if (preg_match('/(bs|bolivar|ves)/', $value)) return null;
+        if (is_null($raw) || $raw === '') return null;
 
-        if (preg_match('/[\d\.\,]+/', $value, $matches)) {
-            $number = str_replace(['.', ','], ['', '.'], $matches[0]);
-            $float = round(floatval($number), 2);
-            return ($float > 0 && $float < 2000) ? $float : null;
+        // Convertimos a string y limpiamos espacios o símbolos de moneda
+        $value = str_replace(['$', 'USD', 'usd', ' '], '', trim((string)$raw));
+
+        // Si no hay números, fuera.
+        if (!preg_match('/[\d\.\,]+/', $value, $matches)) return null;
+        
+        $numberStr = $matches[0];
+
+        // Lógica inteligente de conversión:
+        // Si tiene coma y punto (ej: 1.200,50), el punto es miles y la coma es decimal.
+        if (str_contains($numberStr, ',') && str_contains($numberStr, '.')) {
+            $numberStr = str_replace('.', '', $numberStr); // Quitar miles
+            $numberStr = str_replace(',', '.', $numberStr); // Cambiar coma a punto decimal
+        } 
+        // Si solo tiene coma (ej: 30,00), la tratamos como decimal.
+        elseif (str_contains($numberStr, ',')) {
+            $numberStr = str_replace(',', '.', $numberStr);
         }
-        return null;
+
+        $float = filter_var($numberStr, FILTER_VALIDATE_FLOAT);
+
+        if ($float === false) return null;
+
+        // He subido el límite a 5000 por si alguien paga varios cupos juntos, 
+        // ajústalo según el precio de tus campamentos.
+        return ($float > 0 && $float < 5000) ? round($float, 2) : null;
     }
 
     private function mapGender($value)

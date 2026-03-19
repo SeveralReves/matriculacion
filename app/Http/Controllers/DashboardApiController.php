@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\{Camp, Camper, User, Day, MealRecord, Guest, GuestMealRecord};
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
 class DashboardApiController extends Controller
 {
     public function totals()
@@ -20,15 +22,27 @@ class DashboardApiController extends Controller
     {
         $camp = Camp::findOrFail($id);
 
-        $this->authorizeCampAccess($camp->id);
+        $paymentMethods = $camp->campers()
+            ->select('payment_method', DB::raw('SUM(usd_amount) as total'))
+            ->groupBy('payment_method')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    // Si el método está vacío en la BD, le ponemos "No especificado"
+                    'method' => $item->payment_method ?: 'No especificado',
+                    'total'  => (float) $item->total
+                ];
+            });
 
         return [
-            'id' => $camp->id,
-            'name' => $camp->name,
-            'image_path' => $camp->image_path,
-            'total_campers' => $camp->campers()->count(),
-            'total_usd' => $camp->campers()->sum('usd_amount') ?? 0,
+            'id'               => $camp->id,
+            'name'             => $camp->name,
+            'image_path'       => $camp->image_path,
+            'total_campers'    => $camp->campers()->count(),
+            'total_usd'        => $camp->campers()->sum('usd_amount') ?? 0,
             'total_registered' => $camp->registeredRecords()->where('has_registered', true)->count(),
+            // Agregamos el nuevo campo aquí
+            'payment_methods'  => $paymentMethods,
         ];
     }
 
