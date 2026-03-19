@@ -96,6 +96,10 @@ export default function Dashboard({ auth }) {
                                 <strong>{campStats.total_campers}</strong>
                             </p>
                             <p>
+                                Acampantes Matriculados:{" "}
+                                <strong>{campStats.total_registered}</strong>
+                            </p>
+                            <p>
                                 Total en USD recolectado:{" "}
                                 <strong>
                                     ${Number(campStats.total_usd).toFixed(2)}

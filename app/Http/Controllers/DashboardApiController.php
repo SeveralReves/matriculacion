@@ -28,6 +28,7 @@ class DashboardApiController extends Controller
             'image_path' => $camp->image_path,
             'total_campers' => $camp->campers()->count(),
             'total_usd' => $camp->campers()->sum('usd_amount') ?? 0,
+            'total_registered' => $camp->registeredRecords()->where('has_registered', true)->count(),
         ];
     }
 

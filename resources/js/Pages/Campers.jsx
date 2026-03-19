@@ -60,6 +60,7 @@ export default function Campers({ auth }) {
 
         try {
             const res = await fetchWithAuth(method, url, { ...form, camp_id: parseInt(selectedCampId) });
+            console.log('res',res)
 
             if (isEditing) {
                 setCampers((prev) => prev.map((c) => (c.id === editId ? res.data : c)));
@@ -70,11 +71,32 @@ export default function Campers({ auth }) {
             }
 
             setShowModal(false);
-            setForm({ ...form, ...camposIniciales });
+            setForm({
+                camp_id: null,
+                identity_card: "",
+                first_name: "",
+                last_name: "",
+                church: "",
+                birth_date: "",
+                age: "", //
+                email: "",
+                phone: "",
+                zone: "",
+                color: "",
+                baptized: false,
+                gender: "male",
+                serial: "",
+                payment_method: "",
+                usd_amount: "",
+                reference: "",
+                comments: "",
+                room_id: null,
+            });
             setIsEditing(false);
             setEditId(null);
             setErrors({});
         } catch (err) {
+            console.error(err)
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors || {});
             } else {
@@ -139,7 +161,7 @@ export default function Campers({ auth }) {
         { key: "last_name", label: "Apellido" },
         { key: "church", label: "Iglesia" },
         { key: "email", label: "Correo" },
-        { key: "zone", label: "Zona" },
+        { key: "zone", label: "Zona/Distrito" },
         { key: "color", label: "Equipo" },
     ];
 
@@ -274,7 +296,7 @@ export default function Campers({ auth }) {
                                     <input type="text" placeholder="Equipo" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className={`border rounded p-2 ${errors.color ? 'border-red-500' : ''}`} title={errors.color?.[0] || ""} />
                                     <input type="text" placeholder="Serial" value={form.serial} onChange={e => setForm({ ...form, serial: e.target.value })} className={`border rounded p-2 ${errors.serial ? 'border-red-500' : ''}`} title={errors.serial?.[0] || ""} required />
                                     <select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })} className={`border rounded p-2 ${errors.payment_method ? 'border-red-500' : ''}`} title={errors.payment_method?.[0] || ""} required>
-                                        <option value="" disabled selected>Método de pago</option>
+                                        <option value="" disabled>Método de pago</option>
                                         <option value="Pago movil">Pago móvil</option>
                                         <option value="Transferencia">Transferencia</option>
                                         <option value="Efectivo">Efectivo</option>
