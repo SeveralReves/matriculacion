@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import DataTable from "@/Components/DataTable";
+import DataTable from "@/Components/Datatable";
 import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
 import { fetchWithAuth } from "@/utils/axiosInstance"; 
 

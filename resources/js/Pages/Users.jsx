@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import DataTable from "@/Components/DataTable";
+import DataTable from "@/Components/Datatable";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import { showSuccess, showError, showConfirm } from "@/utils/swalHelper";
 import { fetchWithAuth } from "@/utils/axiosInstance"; // ✅ Agregado
