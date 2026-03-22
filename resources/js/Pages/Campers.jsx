@@ -38,6 +38,9 @@ export default function Campers({ auth }) {
     const [churches, setChurches] = useState([]);
     const [zones, setZones] = useState([]);
     const [rooms, setRooms] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [minAge, setMinAge] = useState("");
+    const [maxAge, setMaxAge] = useState("");
 
     useEffect(() => {
         axios.get("/api/camps").then((res) => setCamps(res.data));
@@ -134,6 +137,39 @@ export default function Campers({ auth }) {
         setErrors({});
     };
 
+    const filteredCampers = campers.filter((camper) => {
+        // 1. Buscador General
+        const searchMatch = 
+            camper.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            camper.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (camper.identity_card && camper.identity_card.includes(searchTerm)) ||
+            camper.church.toLowerCase().includes(searchTerm.toLowerCase());
+
+        // 2. Filtro de Rango de Edad
+        let ageMatch = true;
+        if (minAge || maxAge) {
+            if (!camper.birth_date) {
+                ageMatch = false; 
+            } else {
+                // Calculamos la edad actual
+                const today = new Date();
+                const birth = new Date(camper.birth_date);
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+
+                // Verificamos si entra en el rango
+                const meetsMin = minAge === "" || age >= parseInt(minAge);
+                const meetsMax = maxAge === "" || age <= parseInt(maxAge);
+                ageMatch = meetsMin && meetsMax;
+            }
+        }
+
+        return searchMatch && ageMatch;
+    });
+
     const handleDelete = async (id) => {
         const result = await showConfirm(
             "¿Eliminar acampante?",
@@ -202,7 +238,57 @@ export default function Campers({ auth }) {
                                 Crear acampante
                             </button>
                         </div>
-                        <DataTable columns={columns} data={campers} onEdit={handleEdit} onDelete={handleDelete} />
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Buscar por nombre o CI:</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Juan Pérez..."
+                                    className="w-full border rounded p-2"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                           <div className="flex gap-2 md:col-span-2">
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Edad Min:</label>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={minAge}
+                                        onChange={(e) => setMinAge(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Edad Max:</label>
+                                    <input
+                                        type="number"
+                                        placeholder="99"
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={maxAge}
+                                        onChange={(e) => setMaxAge(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Botón Limpiar */}
+                            <div className="flex items-end">
+                                <button 
+                                    onClick={() => { setSearchTerm(""); setMinAge(""); setMaxAge(""); }}
+                                    className="w-full bg-white border border-gray-300 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-100 transition shadow-sm"
+                                >
+                                    Limpiar filtros
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {filteredCampers.length === 0 ? (
+                            <div className="text-center py-10 text-gray-500">No se encontraron acampantes con esos filtros.</div>
+                        ) : (
+                            <DataTable columns={columns} data={filteredCampers} onEdit={handleEdit} onDelete={handleDelete} />
+                        )}
                     </>
                 )}
 
